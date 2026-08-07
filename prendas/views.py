@@ -5,6 +5,7 @@ from django.http import HttpResponse
 from .models import Prenda, Gasto
 from .forms import PrendaForm
 import openpyxl
+from django.db.models import Q
 
 
 @login_required
@@ -21,11 +22,10 @@ def lista_prendas(request):
         prendas = prendas.filter(estado=estado)
     if busqueda:
         prendas = prendas.filter(
-            tipo_de_prenda__icontains=busqueda
-        ) | prendas.filter(
-            marca__icontains=busqueda
-        ) | prendas.filter(
-            color__icontains=busqueda
+            Q(tipo_de_prenda__icontains=busqueda) |
+            Q(marca__icontains=busqueda) |
+            Q(color__icontains=busqueda) |
+            Q(localizador__icontains=busqueda)
         )
     if filtro_talla:
         prendas = prendas.filter(talla=filtro_talla)
@@ -35,6 +35,8 @@ def lista_prendas(request):
         prendas = prendas.order_by('precio_vendido')
     elif orden == 'precio_desc':
         prendas = prendas.order_by('-precio_vendido')
+    elif orden == 'antiguas':
+        prendas = prendas.order_by('fecha_creacion')
 
     tallas = Prenda.objects.values_list('talla', flat=True).distinct()
     marcas = Prenda.objects.values_list('marca', flat=True).distinct()

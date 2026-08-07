@@ -16,6 +16,7 @@ class Prenda(models.Model):
     precio_vendido = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='borrador')
     localizador = models.CharField(max_length=10, blank=True)
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def beneficio(self):
         if self.precio_vendido:
@@ -24,6 +25,9 @@ class Prenda(models.Model):
 
     def __str__(self):
         return self.tipo_de_prenda
+    
+    class Meta:
+        ordering = ['-fecha_creacion']
     
 class Gasto(models.Model):
     concepto = models.CharField(max_length=200)

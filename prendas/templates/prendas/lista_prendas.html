@@ -28,7 +28,7 @@
 <div class="bg-white border-bottom px-4 py-3">
     <form method="GET" class="d-flex flex-wrap gap-2">
         <input type="hidden" name="estado" value="{{ estado }}">
-        <input type="text" name="busqueda" value="{{ busqueda }}" class="form-control" style="max-width: 250px;" placeholder="Buscar por nombre, marca o color...">
+        <input type="text" name="busqueda" value="{{ busqueda }}" class="form-control" style="max-width: 250px;" placeholder="Buscar por nombre, marca, color o localizador...">
         
         <select name="talla" class="form-select" style="max-width: 120px;">
             <option value="">Talla</option>
@@ -45,7 +45,8 @@
         </select>
 
         <select name="orden" class="form-select" style="max-width: 180px;">
-            <option value="">Ordenar por...</option>
+            <option value="">Más recientes primero</option>
+            <option value="antiguas" {% if orden == 'antiguas' %}selected{% endif %}>Más antiguas primero</option>
             <option value="precio_asc" {% if orden == 'precio_asc' %}selected{% endif %}>Precio: menor a mayor</option>
             <option value="precio_desc" {% if orden == 'precio_desc' %}selected{% endif %}>Precio: mayor a menor</option>
         </select>

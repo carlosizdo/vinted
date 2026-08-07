@@ -27,7 +27,7 @@ class Prenda(models.Model):
         return self.tipo_de_prenda
     
     class Meta:
-        ordering = ['-fecha_creacion']
+        ordering = ['-id']
     
 class Gasto(models.Model):
     concepto = models.CharField(max_length=200)

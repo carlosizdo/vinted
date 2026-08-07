@@ -36,7 +36,7 @@ def lista_prendas(request):
     elif orden == 'precio_desc':
         prendas = prendas.order_by('-precio_vendido')
     elif orden == 'antiguas':
-        prendas = prendas.order_by('fecha_creacion')
+        prendas = prendas.order_by('id')
 
     tallas = Prenda.objects.values_list('talla', flat=True).distinct()
     marcas = Prenda.objects.values_list('marca', flat=True).distinct()

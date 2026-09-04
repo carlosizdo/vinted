@@ -54,20 +54,16 @@ class InventarioViewsTests(TestCase):
 
         self.assertEqual(response.context['resultado_neto'], Decimal('15.00'))
 
-    def test_accion_masiva_pasa_prendas_a_disponible(self):
-        prenda = Prenda.objects.create(
+    def test_panel_muestra_vista_de_tabla(self):
+        Prenda.objects.create(
             tipo_de_prenda='Camiseta', talla='M', color='Negro', marca='Marca',
-            donde_esta_subido='Vinted', precio_comprado=Decimal('10.00'), estado='borrador',
+            donde_esta_subido='Vinted', precio_comprado=Decimal('10.00'), estado='disponible',
         )
 
-        response = self.client.post(reverse('lista_prendas'), {
-            'accion_masiva': 'disponible',
-            'prendas': [str(prenda.pk)],
-        })
+        response = self.client.get(reverse('lista_prendas'), {'vista': 'tabla'})
 
-        self.assertRedirects(response, reverse('lista_prendas'))
-        prenda.refresh_from_db()
-        self.assertEqual(prenda.estado, 'disponible')
+        self.assertEqual(response.context['vista'], 'tabla')
+        self.assertContains(response, '<table', html=False)
 
     def test_exportacion_incluye_fecha_de_alta(self):
         Prenda.objects.create(

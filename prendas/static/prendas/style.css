@@ -49,12 +49,10 @@ a { text-decoration:none; }
 
 .inventory-header { display:flex; justify-content:space-between; align-items:end; gap:16px; margin:4px 0 18px; }
 .inventory-header p { color:var(--muted); margin:0; }
-.bulk-tools { display:flex; align-items:center; gap:10px; }
-.bulk-actions { display:flex; flex-wrap:wrap; align-items:center; gap:10px; padding:7px 10px; border:1px solid var(--line); border-radius:12px; background:#fff; box-shadow:0 2px 10px rgba(29,38,51,.025); }
-.bulk-count { min-width:95px; color:var(--muted); font-size:.8rem; }
-.bulk-action { width:auto; min-width:185px; min-height:38px; margin-left:auto; }
-.selection-control { position:absolute; top:12px; right:12px; display:grid; width:30px; height:30px; place-items:center; border:1px solid rgba(38,70,83,.14); border-radius:9px; background:rgba(255,255,255,.86); box-shadow:0 2px 5px rgba(29,38,51,.08); cursor:pointer; }
-.selection-control .form-check-input { width:1.05em; height:1.05em; margin:0; cursor:pointer; }
+.view-switch { display:flex; align-items:center; gap:6px; }
+.table-card { overflow:hidden; }
+.inventory-table td:first-child small { display:block; margin-top:3px; color:var(--muted); }
+.inventory-table th { white-space:nowrap; }
 .prenda-card { overflow:hidden; border:1px solid var(--line)!important; border-radius:18px!important; background:var(--paper); box-shadow:0 3px 12px rgba(29,38,51,.035); transition:transform .2s ease,box-shadow .2s ease; }
 .prenda-card:hover { transform:translateY(-4px); box-shadow:var(--shadow); }
 .card-img-top { position:relative; height:112px; overflow:hidden; background:linear-gradient(135deg,#dceee7,#f8e7c0); }

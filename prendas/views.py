@@ -19,6 +19,9 @@ def lista_prendas(request):
     filtro_talla = request.GET.get('talla', '')
     filtro_marca = request.GET.get('marca', '')
     orden = request.GET.get('orden', '')
+    vista = request.GET.get('vista', 'tarjetas')
+    if vista not in {'tarjetas', 'tabla'}:
+        vista = 'tarjetas'
 
     prendas = Prenda.objects.all()
     if estado != 'todas':
@@ -55,23 +58,6 @@ def lista_prendas(request):
 
     form = PrendaForm()
     if request.method == 'POST':
-        accion_masiva = request.POST.get('accion_masiva')
-        if accion_masiva:
-            estado_destino = {
-                'disponible': 'disponible',
-                'borrador': 'borrador',
-            }.get(accion_masiva)
-            prendas_ids = request.POST.getlist('prendas')
-
-            if not estado_destino:
-                messages.error(request, 'La acción seleccionada no es válida.')
-            elif not prendas_ids:
-                messages.error(request, 'Selecciona al menos una prenda.')
-            else:
-                actualizadas = Prenda.objects.filter(pk__in=prendas_ids).exclude(estado=estado_destino).update(estado=estado_destino)
-                messages.success(request, f'Se han actualizado {actualizadas} prendas a {estado_destino}.')
-            return redirect('lista_prendas')
-
         form = PrendaForm(request.POST)
         if form.is_valid():
             form.save()
@@ -99,6 +85,7 @@ def lista_prendas(request):
         'filtro_talla': filtro_talla,
         'filtro_marca': filtro_marca,
         'orden': orden,
+        'vista': vista,
         'tallas': tallas,
         'marcas': marcas,
     })

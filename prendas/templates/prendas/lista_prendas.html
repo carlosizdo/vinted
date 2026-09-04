@@ -184,25 +184,36 @@
             </div>
         </div>
     </div>
-    <form method="post" id="formAccionesMasivas">
-        {% csrf_token %}
-        <div class="bulk-tools mb-3">
-            <button type="button" class="btn btn-outline-secondary btn-sm" id="seleccionarTodo">☑ Seleccionar página</button>
-            <div class="bulk-actions" id="accionesSeleccion" hidden>
-                <span id="contadorSeleccionadas" class="bulk-count">0 seleccionadas</span>
-            <select name="accion_masiva" class="form-select bulk-action" aria-label="Acción para prendas seleccionadas">
-                <option value="">Acción masiva…</option>
-                <option value="disponible">Pasar a disponible</option>
-                <option value="borrador">Pasar a borrador</option>
-            </select>
-            <button type="submit" class="btn btn-dark" id="aplicarAccion" disabled>Aplicar</button>
-            </div>
-        </div>
+    <div class="view-switch mb-3">
+        <span class="small text-muted me-1">Ver como</span>
+        <a href="?estado={{ estado|urlencode }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista=tarjetas" class="btn btn-sm {% if vista == 'tarjetas' %}btn-dark{% else %}btn-outline-secondary{% endif %}">▦ Tarjetas</a>
+        <a href="?estado={{ estado|urlencode }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista=tabla" class="btn btn-sm {% if vista == 'tabla' %}btn-dark{% else %}btn-outline-secondary{% endif %}">☷ Tabla</a>
+    </div>
+    {% if vista == 'tabla' %}
+    <div class="card table-card"><div class="table-responsive">
+        <table class="table inventory-table align-middle">
+            <thead><tr><th>Prenda</th><th>Talla</th><th>Marca</th><th>Localizador</th><th>Plataforma</th><th class="text-end">Compra</th><th class="text-end">Venta</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                {% for prenda in prendas %}
+                <tr>
+                    <td><strong>{{ prenda.tipo_de_prenda }}</strong><small>{{ prenda.color }}</small></td>
+                    <td>{{ prenda.talla }}</td><td>{{ prenda.marca }}</td><td>{{ prenda.localizador|default:"—" }}</td><td>{{ prenda.donde_esta_subido }}</td>
+                    <td class="text-end">{{ prenda.precio_comprado }}€</td><td class="text-end">{% if prenda.precio_vendido is not None %}{{ prenda.precio_vendido }}€{% else %}—{% endif %}</td>
+                    <td><span class="badge rounded-pill badge-{{ prenda.estado }}">{{ prenda.get_estado_display }}</span></td>
+                    <td class="text-end"><a href="{% url 'editar_prenda' prenda.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="9" class="text-center text-muted py-5">No hay prendas con estos filtros.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+    {% else %}
     <div class="row g-3">
         {% for prenda in prendas %}
         <div class="col-6 col-md-4 col-lg-3">
             <div class="card prenda-card h-100">
-                <div class="card-img-top"><label class="selection-control"><input type="checkbox" class="form-check-input selection-checkbox" name="prendas" value="{{ prenda.pk }}" aria-label="Seleccionar {{ prenda.tipo_de_prenda }}"></label></div>
+                <div class="card-img-top"></div>
                 <div class="card-body">
                     <h6 class="card-title fw-semibold mb-1">{{ prenda.tipo_de_prenda }}</h6>
                     {% if prenda.localizador %}
@@ -233,11 +244,13 @@
             <div class="empty-icon">✦</div><h5 class="mb-1">Todavía no hay prendas aquí</h5><p class="mb-0">Añade una prenda o importa tu archivo de Excel para empezar.</p>
         </div>
         {% endfor %}
-        <!-- PAGINACIÓN -->
-        {% if prendas.has_other_pages %}
+    </div>
+    {% endif %}
+    <!-- PAGINACIÓN -->
+    {% if prendas.has_other_pages %}
         <div class="d-flex justify-content-center mt-4 gap-2">
             {% if prendas.has_previous %}
-                <a href="?estado={{ estado|urlencode }}&page={{ prendas.previous_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}" class="btn btn-outline-secondary">← Anterior</a>
+                <a href="?estado={{ estado|urlencode }}&page={{ prendas.previous_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista={{ vista }}" class="btn btn-outline-secondary">← Anterior</a>
             {% endif %}
 
             <span class="btn btn-dark disabled">
@@ -245,39 +258,13 @@
             </span>
 
             {% if prendas.has_next %}
-                <a href="?estado={{ estado|urlencode }}&page={{ prendas.next_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}" class="btn btn-outline-secondary">Siguiente →</a>
+                <a href="?estado={{ estado|urlencode }}&page={{ prendas.next_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista={{ vista }}" class="btn btn-outline-secondary">Siguiente →</a>
             {% endif %}
         </div>
-        {% endif %}
-    </div>
-    </form>
+    {% endif %}
 
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    const selectAll = document.getElementById('seleccionarTodo');
-    const selections = [...document.querySelectorAll('.selection-checkbox')];
-    const counter = document.getElementById('contadorSeleccionadas');
-    const applyButton = document.getElementById('aplicarAccion');
-    const actionSelect = document.querySelector('.bulk-action');
-    const bulkActions = document.getElementById('accionesSeleccion');
-
-    function updateBulkControls() {
-        const selected = selections.filter(input => input.checked).length;
-        counter.textContent = `${selected} seleccionada${selected === 1 ? '' : 's'}`;
-        applyButton.disabled = selected === 0 || !actionSelect.value;
-        bulkActions.hidden = selected === 0;
-        selectAll.textContent = selected === selections.length && selected > 0 ? '☐ Quitar selección' : '☑ Seleccionar página';
-    }
-
-    selectAll.addEventListener('click', () => {
-        const allSelected = selections.length > 0 && selections.every(input => input.checked);
-        selections.forEach(input => input.checked = !allSelected);
-        updateBulkControls();
-    });
-    selections.forEach(input => input.addEventListener('change', updateBulkControls));
-    actionSelect.addEventListener('change', updateBulkControls);
-</script>
 </body>
 </html>

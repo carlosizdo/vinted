@@ -4,9 +4,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from .models import Prenda, Gasto
-from .forms import GastoForm, PrendaForm
+from .forms import GastoForm, ImportarPrendasForm, PrendaForm
 import openpyxl
 from decimal import Decimal
+from django.db import transaction
 from django.db.models import Q, Sum
 
 
@@ -141,6 +142,66 @@ def exportar_excel(request):
     response['Content-Disposition'] = 'attachment; filename="prendas.xlsx"'
     wb.save(response)
     return response
+
+
+@login_required
+def importar_prendas(request):
+    form = ImportarPrendasForm()
+    if request.method == 'POST':
+        form = ImportarPrendasForm(request.POST, request.FILES)
+        if form.is_valid():
+            try:
+                libro = openpyxl.load_workbook(form.cleaned_data['archivo'], read_only=True, data_only=True)
+                hoja = libro.active
+                filas = hoja.iter_rows(values_only=True)
+                cabeceras = next(filas, None)
+                if not cabeceras:
+                    raise ValueError('El Excel está vacío.')
+
+                indices = {str(nombre).strip().lower(): indice for indice, nombre in enumerate(cabeceras) if nombre}
+                requeridas = {'tipo', 'talla', 'color', 'marca', 'donde subido', 'precio comprado', 'estado'}
+                faltantes = requeridas - indices.keys()
+                if faltantes:
+                    raise ValueError('No parece ser un archivo exportado por la aplicación.')
+
+                estados = {'borrador': 'borrador', 'disponible': 'disponible', 'vendido': 'vendido'}
+                prendas = []
+                for numero, fila in enumerate(filas, start=2):
+                    if not any(valor is not None and str(valor).strip() for valor in fila):
+                        continue
+                    try:
+                        estado = estados.get(str(fila[indices['estado']]).strip().lower())
+                        if not estado:
+                            raise ValueError('estado no válido')
+                        precio_comprado = Decimal(str(fila[indices['precio comprado']]))
+                        precio_vendido = None
+                        indice_venta = indices.get('precio vendido')
+                        if indice_venta is not None and fila[indice_venta] not in (None, ''):
+                            precio_vendido = Decimal(str(fila[indice_venta]))
+                        prendas.append(Prenda(
+                            tipo_de_prenda=str(fila[indices['tipo']]).strip(),
+                            talla=str(fila[indices['talla']]).strip(),
+                            color=str(fila[indices['color']]).strip(),
+                            marca=str(fila[indices['marca']]).strip(),
+                            localizador=str(fila[indices.get('localizador', -1)] or '').strip() if 'localizador' in indices else '',
+                            donde_esta_subido=str(fila[indices['donde subido']]).strip(),
+                            precio_comprado=precio_comprado,
+                            precio_vendido=precio_vendido,
+                            estado=estado,
+                        ))
+                    except (ArithmeticError, IndexError, TypeError, ValueError) as error:
+                        raise ValueError(f'La fila {numero} no es válida ({error}).') from error
+
+                if not prendas:
+                    raise ValueError('No se han encontrado prendas para importar.')
+                with transaction.atomic():
+                    Prenda.objects.bulk_create(prendas)
+                messages.success(request, f'Se han importado {len(prendas)} prendas correctamente.')
+                return redirect('lista_prendas')
+            except (ValueError, openpyxl.utils.exceptions.InvalidFileException) as error:
+                form.add_error('archivo', str(error))
+
+    return render(request, 'prendas/importar_prendas.html', {'form': form})
 
 
 @login_required

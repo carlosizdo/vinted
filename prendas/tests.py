@@ -3,6 +3,8 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+from io import BytesIO
+import openpyxl
 
 from .forms import GastoForm, PrendaForm
 from .models import Prenda
@@ -51,3 +53,18 @@ class InventarioViewsTests(TestCase):
             response['Content-Type'],
             'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
+
+    def test_importacion_desde_excel_exportado(self):
+        libro = openpyxl.Workbook()
+        hoja = libro.active
+        hoja.append(['Tipo', 'Talla', 'Color', 'Marca', 'Localizador', 'Donde subido', 'Precio comprado', 'Precio vendido', 'Beneficio', 'Estado'])
+        hoja.append(['Sudadera', 'M', 'Verde', 'Marca', 'A1', 'Vinted', 15, 30, 15, 'Vendido'])
+        archivo = BytesIO()
+        libro.save(archivo)
+        archivo.seek(0)
+        archivo.name = 'prendas.xlsx'
+
+        response = self.client.post(reverse('importar_prendas'), {'archivo': archivo})
+        self.assertRedirects(response, reverse('lista_prendas'))
+        prenda = Prenda.objects.get(tipo_de_prenda='Sudadera')
+        self.assertEqual(prenda.precio_vendido, Decimal('30'))

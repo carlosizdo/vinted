@@ -32,3 +32,18 @@ class GastoForm(forms.ModelForm):
         if importe <= 0:
             raise forms.ValidationError('El importe debe ser mayor que cero.')
         return importe
+
+
+class ImportarPrendasForm(forms.Form):
+    archivo = forms.FileField(
+        label='Archivo de inventario',
+        help_text='Selecciona el Excel descargado desde “Exportar Excel”.',
+    )
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data['archivo']
+        if not archivo.name.lower().endswith('.xlsx'):
+            raise forms.ValidationError('El archivo debe ser un Excel con extensión .xlsx.')
+        if archivo.size > 5 * 1024 * 1024:
+            raise forms.ValidationError('El archivo no puede superar 5 MB.')
+        return archivo

@@ -69,6 +69,21 @@ class InventarioViewsTests(TestCase):
         prenda.refresh_from_db()
         self.assertEqual(prenda.estado, 'disponible')
 
+    def test_panel_filtra_por_plataforma(self):
+        Prenda.objects.create(
+            tipo_de_prenda='Camisa', talla='M', color='Blanco', marca='Marca',
+            donde_esta_subido='Vinted', precio_comprado=Decimal('8.00'), estado='disponible',
+        )
+        Prenda.objects.create(
+            tipo_de_prenda='Abrigo', talla='L', color='Negro', marca='Marca',
+            donde_esta_subido='Wallapop', precio_comprado=Decimal('15.00'), estado='disponible',
+        )
+
+        response = self.client.get(reverse('lista_prendas'), {'plataforma': 'Vinted'})
+
+        self.assertContains(response, 'Camisa')
+        self.assertNotContains(response, 'Abrigo')
+
     def test_exportacion_incluye_fecha_de_alta(self):
         Prenda.objects.create(
             tipo_de_prenda='Pantalón', talla='M', color='Gris', marca='Marca',

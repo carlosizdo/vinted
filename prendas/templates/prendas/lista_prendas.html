@@ -34,7 +34,7 @@
     <div class="page-shell">
     <form method="GET" class="filter-form d-flex flex-wrap gap-2">
         <input type="hidden" name="estado" value="{{ estado }}">
-        <div class="search-field"><span aria-hidden="true">⌕</span><input type="text" name="busqueda" value="{{ busqueda }}" class="form-control" placeholder="Buscar prenda, marca, color o localizador…"></div>
+        <input type="text" name="busqueda" value="{{ busqueda }}" class="form-control" style="max-width: 250px;" placeholder="Buscar por nombre, marca, color o localizador...">
         
         <select name="talla" class="form-select" style="max-width: 120px;">
             <option value="">Talla</option>
@@ -50,13 +50,6 @@
             {% endfor %}
         </select>
 
-        <select name="plataforma" class="form-select" style="max-width: 160px;">
-            <option value="">Plataforma</option>
-            {% for plataforma in plataformas %}
-            <option value="{{ plataforma }}" {% if filtro_plataforma == plataforma %}selected{% endif %}>{{ plataforma }}</option>
-            {% endfor %}
-        </select>
-
         <select name="orden" class="form-select" style="max-width: 180px;">
             <option value="">Más recientes primero</option>
             <option value="antiguas" {% if orden == 'antiguas' %}selected{% endif %}>Más antiguas primero</option>
@@ -65,7 +58,7 @@
         </select>
 
         <button type="submit" class="btn btn-dark">Filtrar</button>
-        {% if busqueda or filtro_talla or filtro_marca or filtro_plataforma or orden %}
+        {% if busqueda or filtro_talla or filtro_marca or orden %}
         <a href="?estado={{ estado }}" class="btn btn-outline-secondary">✕ Limpiar</a>
         {% endif %}
     </form></div>
@@ -194,11 +187,7 @@
     <form method="post" id="formAccionesMasivas">
         {% csrf_token %}
         <div class="bulk-bar mb-3">
-            <select id="seleccionRapida" class="form-select bulk-select-menu" aria-label="Seleccionar prendas">
-                <option value="">Seleccionar…</option>
-                <option value="todas">Esta página</option>
-                <option value="ninguna">Quitar selección</option>
-            </select>
+            <label class="bulk-select-all"><input type="checkbox" id="seleccionarTodo" class="form-check-input"> Seleccionar esta página</label>
             <span id="contadorSeleccionadas" class="bulk-count">0 seleccionadas</span>
             <select name="accion_masiva" class="form-select bulk-action" aria-label="Acción para prendas seleccionadas">
                 <option value="">Acción masiva…</option>
@@ -246,7 +235,7 @@
         {% if prendas.has_other_pages %}
         <div class="d-flex justify-content-center mt-4 gap-2">
             {% if prendas.has_previous %}
-                <a href="?estado={{ estado|urlencode }}&page={{ prendas.previous_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&plataforma={{ filtro_plataforma|urlencode }}&orden={{ orden|urlencode }}" class="btn btn-outline-secondary">← Anterior</a>
+                <a href="?estado={{ estado|urlencode }}&page={{ prendas.previous_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}" class="btn btn-outline-secondary">← Anterior</a>
             {% endif %}
 
             <span class="btn btn-dark disabled">
@@ -254,7 +243,7 @@
             </span>
 
             {% if prendas.has_next %}
-                <a href="?estado={{ estado|urlencode }}&page={{ prendas.next_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&plataforma={{ filtro_plataforma|urlencode }}&orden={{ orden|urlencode }}" class="btn btn-outline-secondary">Siguiente →</a>
+                <a href="?estado={{ estado|urlencode }}&page={{ prendas.next_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}" class="btn btn-outline-secondary">Siguiente →</a>
             {% endif %}
         </div>
         {% endif %}
@@ -265,7 +254,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-    const quickSelect = document.getElementById('seleccionRapida');
+    const selectAll = document.getElementById('seleccionarTodo');
     const selections = [...document.querySelectorAll('.selection-checkbox')];
     const counter = document.getElementById('contadorSeleccionadas');
     const applyButton = document.getElementById('aplicarAccion');
@@ -275,16 +264,11 @@
         const selected = selections.filter(input => input.checked).length;
         counter.textContent = `${selected} seleccionada${selected === 1 ? '' : 's'}`;
         applyButton.disabled = selected === 0 || !actionSelect.value;
-        if (selected === selections.length && selected > 0) quickSelect.value = 'todas';
-        else if (selected === 0) quickSelect.value = 'ninguna';
-        else quickSelect.value = '';
+        selectAll.checked = selections.length > 0 && selected === selections.length;
+        selectAll.indeterminate = selected > 0 && selected < selections.length;
     }
 
-    quickSelect.addEventListener('change', () => {
-        if (quickSelect.value === 'todas') selections.forEach(input => input.checked = true);
-        if (quickSelect.value === 'ninguna') selections.forEach(input => input.checked = false);
-        updateBulkControls();
-    });
+    selectAll.addEventListener('change', () => { selections.forEach(input => input.checked = selectAll.checked); updateBulkControls(); });
     selections.forEach(input => input.addEventListener('change', updateBulkControls));
     actionSelect.addEventListener('change', updateBulkControls);
 </script>

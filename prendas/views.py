@@ -18,7 +18,6 @@ def lista_prendas(request):
     busqueda = request.GET.get('busqueda', '')
     filtro_talla = request.GET.get('talla', '')
     filtro_marca = request.GET.get('marca', '')
-    filtro_plataforma = request.GET.get('plataforma', '')
     orden = request.GET.get('orden', '')
 
     prendas = Prenda.objects.all()
@@ -35,8 +34,6 @@ def lista_prendas(request):
         prendas = prendas.filter(talla=filtro_talla)
     if filtro_marca:
         prendas = prendas.filter(marca__icontains=filtro_marca)
-    if filtro_plataforma:
-        prendas = prendas.filter(donde_esta_subido__icontains=filtro_plataforma)
     if orden == 'precio_asc':
         prendas = prendas.order_by('precio_vendido')
     elif orden == 'precio_desc':
@@ -46,7 +43,6 @@ def lista_prendas(request):
 
     tallas = Prenda.objects.values_list('talla', flat=True).distinct()
     marcas = Prenda.objects.values_list('marca', flat=True).distinct()
-    plataformas = Prenda.objects.values_list('donde_esta_subido', flat=True).distinct()
 
     total = Prenda.objects.count()
     vendidas = Prenda.objects.filter(estado='vendido').count()
@@ -102,11 +98,9 @@ def lista_prendas(request):
         'busqueda': busqueda,
         'filtro_talla': filtro_talla,
         'filtro_marca': filtro_marca,
-        'filtro_plataforma': filtro_plataforma,
         'orden': orden,
         'tallas': tallas,
         'marcas': marcas,
-        'plataformas': plataformas,
     })
 
 

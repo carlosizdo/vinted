@@ -200,7 +200,7 @@
                     <td>{{ prenda.talla }}</td><td>{{ prenda.marca }}</td><td>{{ prenda.localizador|default:"—" }}</td><td>{{ prenda.donde_esta_subido }}</td>
                     <td class="text-end">{{ prenda.precio_comprado }}€</td><td class="text-end">{% if prenda.precio_vendido is not None %}{{ prenda.precio_vendido }}€{% else %}—{% endif %}</td>
                     <td><span class="badge rounded-pill badge-{{ prenda.estado }}">{{ prenda.get_estado_display }}</span></td>
-                    <td class="text-end"><a href="{% url 'editar_prenda' prenda.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a></td>
+                    <td class="text-end"><a href="{% url 'editar_prenda' prenda.pk %}" class="table-icon-action" title="Editar {{ prenda.tipo_de_prenda }}" aria-label="Editar {{ prenda.tipo_de_prenda }}">✏️</a><a href="{% url 'eliminar_prenda' prenda.pk %}" class="table-icon-action" title="Eliminar {{ prenda.tipo_de_prenda }}" aria-label="Eliminar {{ prenda.tipo_de_prenda }}">🗑️</a></td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="9" class="text-center text-muted py-5">No hay prendas con estos filtros.</td></tr>
@@ -234,8 +234,10 @@
                         </span>
                     </div>
                     {% endif %}
-                    <a href="{% url 'editar_prenda' prenda.pk %}" class="btn btn-sm btn-outline-secondary mt-2 w-100">Editar</a>
-                    <a href="{% url 'eliminar_prenda' prenda.pk %}" class="btn btn-sm btn-outline-danger mt-1 w-100">Eliminar</a>
+                    <div class="card-actions mt-3">
+                        <a href="{% url 'editar_prenda' prenda.pk %}" class="icon-action" title="Editar {{ prenda.tipo_de_prenda }}" aria-label="Editar {{ prenda.tipo_de_prenda }}">✏️</a>
+                        <a href="{% url 'eliminar_prenda' prenda.pk %}" class="icon-action icon-danger" title="Eliminar {{ prenda.tipo_de_prenda }}" aria-label="Eliminar {{ prenda.tipo_de_prenda }}">🗑️</a>
+                    </div>
                 </div>
             </div>
         </div>

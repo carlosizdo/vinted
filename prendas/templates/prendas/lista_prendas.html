@@ -186,15 +186,17 @@
     </div>
     <form method="post" id="formAccionesMasivas">
         {% csrf_token %}
-        <div class="bulk-bar mb-3">
-            <label class="bulk-select-all"><input type="checkbox" id="seleccionarTodo" class="form-check-input"> Seleccionar esta página</label>
-            <span id="contadorSeleccionadas" class="bulk-count">0 seleccionadas</span>
+        <div class="bulk-tools mb-3">
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="seleccionarTodo">☑ Seleccionar página</button>
+            <div class="bulk-actions" id="accionesSeleccion" hidden>
+                <span id="contadorSeleccionadas" class="bulk-count">0 seleccionadas</span>
             <select name="accion_masiva" class="form-select bulk-action" aria-label="Acción para prendas seleccionadas">
                 <option value="">Acción masiva…</option>
                 <option value="disponible">Pasar a disponible</option>
                 <option value="borrador">Pasar a borrador</option>
             </select>
             <button type="submit" class="btn btn-dark" id="aplicarAccion" disabled>Aplicar</button>
+            </div>
         </div>
     <div class="row g-3">
         {% for prenda in prendas %}
@@ -259,16 +261,21 @@
     const counter = document.getElementById('contadorSeleccionadas');
     const applyButton = document.getElementById('aplicarAccion');
     const actionSelect = document.querySelector('.bulk-action');
+    const bulkActions = document.getElementById('accionesSeleccion');
 
     function updateBulkControls() {
         const selected = selections.filter(input => input.checked).length;
         counter.textContent = `${selected} seleccionada${selected === 1 ? '' : 's'}`;
         applyButton.disabled = selected === 0 || !actionSelect.value;
-        selectAll.checked = selections.length > 0 && selected === selections.length;
-        selectAll.indeterminate = selected > 0 && selected < selections.length;
+        bulkActions.hidden = selected === 0;
+        selectAll.textContent = selected === selections.length && selected > 0 ? '☐ Quitar selección' : '☑ Seleccionar página';
     }
 
-    selectAll.addEventListener('change', () => { selections.forEach(input => input.checked = selectAll.checked); updateBulkControls(); });
+    selectAll.addEventListener('click', () => {
+        const allSelected = selections.length > 0 && selections.every(input => input.checked);
+        selections.forEach(input => input.checked = !allSelected);
+        updateBulkControls();
+    });
     selections.forEach(input => input.addEventListener('change', updateBulkControls));
     actionSelect.addEventListener('change', updateBulkControls);
 </script>

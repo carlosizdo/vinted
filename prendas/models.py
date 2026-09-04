@@ -19,7 +19,7 @@ class Prenda(models.Model):
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def beneficio(self):
-        if self.precio_vendido:
+        if self.precio_vendido is not None:
             return self.precio_vendido - self.precio_comprado
         return None
 

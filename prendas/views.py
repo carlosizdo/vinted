@@ -1,11 +1,13 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.http import HttpResponse
 from .models import Prenda, Gasto
-from .forms import PrendaForm
+from .forms import GastoForm, PrendaForm
 import openpyxl
-from django.db.models import Q
+from decimal import Decimal
+from django.db.models import Q, Sum
 
 
 @login_required
@@ -55,12 +57,15 @@ def lista_prendas(request):
         form = PrendaForm(request.POST)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Prenda añadida correctamente.')
             return redirect('lista_prendas')
-        else:
-            print(form.errors)
 
+    prendas_vendidas = Prenda.objects.filter(estado='vendido')
     beneficio_total = sum(
-        p.beneficio() for p in Prenda.objects.filter(estado='vendido') if p.beneficio() is not None)
+        (p.beneficio() for p in prendas_vendidas if p.beneficio() is not None), Decimal('0.00'))
+    facturacion_total = prendas_vendidas.aggregate(total=Sum('precio_vendido'))['total'] or Decimal('0.00')
+    inversion_total = Prenda.objects.aggregate(total=Sum('precio_comprado'))['total'] or Decimal('0.00')
+    gastos_totales = Gasto.objects.aggregate(total=Sum('importe'))['total'] or Decimal('0.00')
 
     return render(request, 'prendas/lista_prendas.html', {
         'prendas': prendas,
@@ -71,6 +76,10 @@ def lista_prendas(request):
         'borradores': borradores,
         'form': form,
         'beneficio_total': beneficio_total,
+        'facturacion_total': facturacion_total,
+        'inversion_total': inversion_total,
+        'gastos_totales': gastos_totales,
+        'resultado_neto': beneficio_total - gastos_totales,
         'busqueda': busqueda,
         'filtro_talla': filtro_talla,
         'filtro_marca': filtro_marca,
@@ -89,6 +98,7 @@ def editar_prenda(request, pk):
         form = PrendaForm(request.POST, instance=prenda)
         if form.is_valid():
             form.save()
+            messages.success(request, 'Prenda actualizada correctamente.')
             return redirect('lista_prendas')
 
     return render(request, 'prendas/editar_prenda.html', {'form': form, 'prenda': prenda})
@@ -99,6 +109,7 @@ def eliminar_prenda(request, pk):
     prenda = get_object_or_404(Prenda, pk=pk)
     if request.method == 'POST':
         prenda.delete()
+        messages.success(request, 'Prenda eliminada.')
         return redirect('lista_prendas')
     return render(request, 'prendas/eliminar_prenda.html', {'prenda': prenda})
 
@@ -109,7 +120,7 @@ def exportar_excel(request):
     ws = wb.active
     ws.title = "Prendas"
 
-    ws.append(['Tipo', 'Talla', 'Color', 'Marca', 'Localizador', 'Donde subido', 'Precio comprado', 'Precio vendido', 'Beneficio', 'Estado'])
+    ws.append(['Tipo', 'Talla', 'Color', 'Marca', 'Localizador', 'Donde subido', 'Precio comprado', 'Precio vendido', 'Beneficio', 'Estado', 'Fecha de alta'])
 
     for prenda in Prenda.objects.all():
         ws.append([
@@ -121,8 +132,9 @@ def exportar_excel(request):
             prenda.donde_esta_subido,
             float(prenda.precio_comprado),
             float(prenda.precio_vendido) if prenda.precio_vendido else '',
-            float(prenda.beneficio()) if prenda.beneficio() else '',
+            float(prenda.beneficio()) if prenda.beneficio() is not None else '',
             prenda.get_estado_display(),
+            prenda.fecha_creacion.strftime('%d/%m/%Y'),
         ])
 
     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
@@ -133,13 +145,13 @@ def exportar_excel(request):
 
 @login_required
 def lista_gastos(request):
+    form = GastoForm()
     if request.method == 'POST':
-        Gasto.objects.create(
-            concepto=request.POST.get('concepto'),
-            importe=request.POST.get('importe'),
-            notas=request.POST.get('notas', '')
-        )
-        return redirect('lista_gastos')
+        form = GastoForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Gasto añadido correctamente.')
+            return redirect('lista_gastos')
 
     gastos = Gasto.objects.all()
     total_gastos = sum(g.importe for g in gastos)
@@ -147,6 +159,7 @@ def lista_gastos(request):
     context = {
         'gastos': gastos,
         'total_gastos': total_gastos,
+        'form': form,
     }
     return render(request, 'prendas/gastos.html', context)
 
@@ -156,5 +169,6 @@ def eliminar_gasto(request, pk):
     gasto = get_object_or_404(Gasto, pk=pk)
     if request.method == 'POST':
         gasto.delete()
+        messages.success(request, 'Gasto eliminado.')
         return redirect('lista_gastos')
     return render(request, 'prendas/eliminar_gasto.html', {'gasto': gasto})

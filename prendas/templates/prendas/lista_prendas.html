@@ -151,7 +151,7 @@
 <!-- CONTENIDO -->
 <main class="page-shell page-content container-fluid px-4 py-4">
 
-    <div class="inventory-header"><div><div class="eyebrow">Resumen de negocio</div><h1 class="page-heading h2 mb-1">Tu inventario</h1><p>Controla compras, ventas y beneficio de un vistazo.</p></div><span class="small text-muted">{{ total }} prendas registradas</span></div>
+    <div class="inventory-header"><div><div class="eyebrow">Resumen de negocio</div><h1 class="page-heading h2 mb-1">Tu inventario</h1><p>Controla existencias, ventas y resultado de las prendas vendidas.</p></div><span class="small text-muted">{{ total }} prendas registradas</span></div>
 
     <!-- STATS -->
     <div class="row g-3 mb-4">
@@ -173,15 +173,14 @@
                 <div class="stat-num">{{ disponibles }}</div>
             </div>
         </div>
-        <div class="col-md-2"><div class="stat-card"><div class="stat-label">Facturación</div><div class="stat-num">{{ facturacion_total }}€</div><small class="stat-detail">Ventas de prendas vendidas</small></div></div>
-        <div class="col-md-2"><div class="stat-card"><div class="stat-label">Inversión acumulada</div><div class="stat-num">{{ inversion_total }}€</div><small class="stat-detail">Compras de todas las prendas</small></div></div>
-        <div class="col-md-2">
+        <div class="col-md-3"><div class="stat-card"><div class="stat-label">Bruto vendido</div><div class="stat-num">{{ facturacion_total }}€</div><small class="stat-detail">Suma de todas las ventas, sin restar compras</small></div></div>
+        <div class="col-md-3">
             <div class="stat-card stat-highlight">
                 <div class="stat-label">Resultado neto</div>
                 <div class="stat-num">
                     {{ resultado_neto }}€
                 </div>
-                <small class="stat-detail">Beneficio de ventas: {{ beneficio_total }}€ · Gastos: {{ gastos_totales }}€</small>
+                <small class="stat-detail">Ventas de prendas vendidas menos su precio de compra</small>
             </div>
         </div>
     </div>

@@ -7,7 +7,7 @@ from io import BytesIO
 import openpyxl
 
 from .forms import GastoForm, PrendaForm
-from .models import Prenda
+from .models import Gasto, Prenda
 
 
 class PrendaFormTests(TestCase):
@@ -40,6 +40,18 @@ class InventarioViewsTests(TestCase):
         response = self.client.get(reverse('lista_prendas'))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['beneficio_total'], Decimal('15.00'))
+        self.assertEqual(response.context['resultado_neto'], Decimal('15.00'))
+
+    def test_resultado_neto_no_resta_gastos_extra(self):
+        Prenda.objects.create(
+            tipo_de_prenda='Camiseta', talla='L', color='Azul', marca='Marca',
+            donde_esta_subido='Vinted', precio_comprado=Decimal('10.00'),
+            precio_vendido=Decimal('25.00'), estado='vendido',
+        )
+        Gasto.objects.create(concepto='Bolsas', importe=Decimal('3.00'))
+
+        response = self.client.get(reverse('lista_prendas'))
+
         self.assertEqual(response.context['resultado_neto'], Decimal('15.00'))
 
     def test_exportacion_incluye_fecha_de_alta(self):

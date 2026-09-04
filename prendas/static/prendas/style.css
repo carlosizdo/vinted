@@ -53,8 +53,10 @@ a { text-decoration:none; }
 .table-card { overflow:hidden; }
 .inventory-table td:first-child small { display:block; margin-top:3px; color:var(--muted); }
 .inventory-table th { white-space:nowrap; }
-.table-icon-action { display:inline-grid; width:32px; height:32px; margin-left:4px; place-items:center; border-radius:8px; }
-.table-icon-action:hover { background:#edf4ef; }
+.table-icon-action { display:inline-grid; width:34px; height:34px; margin-left:5px; place-items:center; border:1px solid #d8e7df; border-radius:10px; background:#f4faf6; transition:transform .16s ease,background .16s ease; }
+.table-icon-action:last-child { border-color:#f1d1d1; background:#fff4f4; }
+.table-icon-action:hover { transform:translateY(-1px); background:#e1f2e7; }
+.table-icon-action:last-child:hover { background:#ffe3e3; }
 .prenda-card { overflow:hidden; border:1px solid var(--line)!important; border-radius:18px!important; background:var(--paper); box-shadow:0 3px 12px rgba(29,38,51,.035); transition:transform .2s ease,box-shadow .2s ease; }
 .prenda-card:hover { transform:translateY(-4px); box-shadow:var(--shadow); }
 .card-img-top { position:relative; height:112px; overflow:hidden; background:linear-gradient(135deg,#dceee7,#f8e7c0); }
@@ -70,10 +72,11 @@ a { text-decoration:none; }
 .badge-borrador { color:#735b28; background:#fff1c9; }
 .locator-badge { background:#edf0ed; color:#53625c; }
 .profit-line { padding-top:10px; border-top:1px solid #eff1ef; color:var(--muted); font-size:.75rem; }
-.card-actions { display:flex; gap:8px; }
-.icon-action { display:grid; flex:1; min-height:38px; place-items:center; border:1px solid #d7dfd9; border-radius:10px; background:#fff; font-size:1rem; transition:transform .16s ease,background .16s ease,border-color .16s ease; }
-.icon-action:hover { transform:translateY(-1px); border-color:#aebbb3; background:#f4f8f5; }
-.icon-danger:hover { border-color:#efb7b7; background:#fff2f2; }
+.card-actions { display:flex; justify-content:flex-end; gap:8px; }
+.icon-action { display:grid; width:40px; height:40px; place-items:center; border:1px solid #cfe4da; border-radius:12px; background:#eaf6ef; font-size:1rem; box-shadow:0 2px 5px rgba(29,38,51,.04); transition:transform .16s ease,box-shadow .16s ease,background .16s ease; }
+.icon-action:hover { transform:translateY(-2px) scale(1.04); background:#d8f0e2; box-shadow:0 6px 12px rgba(29,38,51,.12); }
+.icon-danger { border-color:#f1d1d1; background:#fff0f0; }
+.icon-danger:hover { background:#ffe0e0; }
 .empty-state { padding:64px 20px; border:1px dashed #cfd9d2; border-radius:18px; background:#fbfcfb; color:var(--muted); }
 .empty-state .empty-icon { display:grid; width:50px; height:50px; place-items:center; margin:0 auto 13px; border-radius:15px; background:var(--mint); color:var(--brand); font-size:22px; }
 

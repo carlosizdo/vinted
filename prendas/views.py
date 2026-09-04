@@ -55,6 +55,23 @@ def lista_prendas(request):
 
     form = PrendaForm()
     if request.method == 'POST':
+        accion_masiva = request.POST.get('accion_masiva')
+        if accion_masiva:
+            estado_destino = {
+                'disponible': 'disponible',
+                'borrador': 'borrador',
+            }.get(accion_masiva)
+            prendas_ids = request.POST.getlist('prendas')
+
+            if not estado_destino:
+                messages.error(request, 'La acción seleccionada no es válida.')
+            elif not prendas_ids:
+                messages.error(request, 'Selecciona al menos una prenda.')
+            else:
+                actualizadas = Prenda.objects.filter(pk__in=prendas_ids).exclude(estado=estado_destino).update(estado=estado_destino)
+                messages.success(request, f'Se han actualizado {actualizadas} prendas a {estado_destino}.')
+            return redirect('lista_prendas')
+
         form = PrendaForm(request.POST)
         if form.is_valid():
             form.save()

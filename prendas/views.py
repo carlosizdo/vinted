@@ -68,6 +68,7 @@ def lista_prendas(request):
     beneficio_total = sum(
         (p.beneficio() for p in prendas_vendidas if p.beneficio() is not None), Decimal('0.00'))
     facturacion_total = prendas_vendidas.aggregate(total=Sum('precio_vendido'))['total'] or Decimal('0.00')
+    dinero_gastado = Prenda.objects.aggregate(total=Sum('precio_comprado'))['total'] or Decimal('0.00')
     return render(request, 'prendas/lista_prendas.html', {
         'prendas': prendas,
         'estado': estado,
@@ -78,6 +79,7 @@ def lista_prendas(request):
         'form': form,
         'beneficio_total': beneficio_total,
         'facturacion_total': facturacion_total,
+        'dinero_gastado': dinero_gastado,
         # El resultado neto del inventario compara solo ventas y coste de
         # compra de las prendas que ya se han vendido.
         'resultado_neto': beneficio_total,

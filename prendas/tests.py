@@ -41,6 +41,7 @@ class InventarioViewsTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['beneficio_total'], Decimal('15.00'))
         self.assertEqual(response.context['resultado_neto'], Decimal('15.00'))
+        self.assertEqual(response.context['dinero_gastado'], Decimal('10.00'))
 
     def test_resultado_neto_no_resta_gastos_extra(self):
         Prenda.objects.create(

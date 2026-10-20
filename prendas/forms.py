@@ -1,10 +1,13 @@
 from django import forms
-from .models import Gasto, Prenda
+from .models import Gasto, Pedido, Prenda
 
 class PrendaForm(forms.ModelForm):
     class Meta:
         model = Prenda
-        fields = ['tipo_de_prenda', 'talla', 'color', 'marca', 'localizador', 'donde_esta_subido', 'precio_comprado', 'precio_vendido', 'estado']
+        fields = ['tipo_de_prenda', 'talla', 'color', 'marca', 'localizador', 'donde_esta_subido', 'precio_comprado', 'precio_vendido', 'estado', 'pedido']
+        widgets = {
+            'pedido': forms.Select(attrs={'class': 'form-select'}),
+        }
 
     def clean(self):
         cleaned_data = super().clean()
@@ -32,6 +35,31 @@ class GastoForm(forms.ModelForm):
         if importe <= 0:
             raise forms.ValidationError('El importe debe ser mayor que cero.')
         return importe
+
+
+class PedidoForm(forms.ModelForm):
+    class Meta:
+        model = Pedido
+        fields = ['nombre', 'importe_compra', 'gastos_extra', 'fecha', 'notas']
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control'}),
+            'importe_compra': forms.NumberInput(attrs={'class': 'form-control', 'min': '0.01', 'step': '0.01'}),
+            'gastos_extra': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}),
+            'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'notas': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+    def clean_importe_compra(self):
+        importe = self.cleaned_data['importe_compra']
+        if importe <= 0:
+            raise forms.ValidationError('El importe de compra debe ser mayor que cero.')
+        return importe
+
+    def clean_gastos_extra(self):
+        gastos = self.cleaned_data['gastos_extra']
+        if gastos < 0:
+            raise forms.ValidationError('Los gastos extra no pueden ser negativos.')
+        return gastos
 
 
 class ImportarPrendasForm(forms.Form):

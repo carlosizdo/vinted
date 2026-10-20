@@ -6,8 +6,8 @@ from django.urls import reverse
 from io import BytesIO
 import openpyxl
 
-from .forms import GastoForm, PrendaForm
-from .models import Gasto, Prenda
+from .forms import GastoForm, PedidoForm, PrendaForm
+from .models import Gasto, Pedido, Prenda
 
 
 class PrendaFormTests(TestCase):
@@ -24,6 +24,14 @@ class PrendaFormTests(TestCase):
         form = GastoForm(data={'concepto': 'Bolsas', 'importe': '0', 'notas': ''})
         self.assertFalse(form.is_valid())
         self.assertIn('importe', form.errors)
+
+    def test_un_pedido_necesita_un_importe_positivo(self):
+        form = PedidoForm(data={
+            'nombre': 'Pedido de prueba', 'importe_compra': '0', 'gastos_extra': '0',
+            'fecha': '2026-10-20', 'notas': '',
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn('importe_compra', form.errors)
 
 
 class InventarioViewsTests(TestCase):
@@ -92,3 +100,18 @@ class InventarioViewsTests(TestCase):
         self.assertRedirects(response, reverse('lista_prendas'))
         prenda = Prenda.objects.get(tipo_de_prenda='Sudadera')
         self.assertEqual(prenda.precio_vendido, Decimal('30'))
+
+    def test_pedido_muestra_lo_recuperado_y_el_balance(self):
+        pedido = Pedido.objects.create(nombre='Pedido de 600€', importe_compra=Decimal('600.00'))
+        Prenda.objects.create(
+            tipo_de_prenda='Cazadora', talla='M', color='Negro', marca='Marca',
+            donde_esta_subido='Vinted', precio_comprado=Decimal('20.00'),
+            precio_vendido=Decimal('45.00'), estado='vendido', pedido=pedido,
+        )
+
+        response = self.client.get(reverse('detalle_pedido', args=[pedido.pk]))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['pedido'].facturacion, Decimal('45.00'))
+        self.assertEqual(response.context['pedido'].pendiente_recuperar, Decimal('555.00'))
+        self.assertEqual(response.context['pedido'].balance, Decimal('-555.00'))

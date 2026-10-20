@@ -1,4 +1,25 @@
 from django.db import models
+from django.utils import timezone
+
+
+class Pedido(models.Model):
+    """Una compra de lote que puede contener varias prendas del inventario."""
+
+    nombre = models.CharField(max_length=120)
+    importe_compra = models.DecimalField(max_digits=10, decimal_places=2)
+    gastos_extra = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    fecha = models.DateField(default=timezone.localdate)
+    notas = models.CharField(max_length=255, blank=True)
+
+    @property
+    def inversion_total(self):
+        return self.importe_compra + self.gastos_extra
+
+    def __str__(self):
+        return self.nombre
+
+    class Meta:
+        ordering = ['-fecha', '-id']
 
 class Prenda(models.Model):
     ESTADO_CHOICES = [
@@ -16,6 +37,7 @@ class Prenda(models.Model):
     precio_vendido = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
     estado = models.CharField(max_length=20, choices=ESTADO_CHOICES, default='borrador')
     localizador = models.CharField(max_length=10, blank=True)
+    pedido = models.ForeignKey(Pedido, on_delete=models.SET_NULL, null=True, blank=True, related_name='prendas')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def beneficio(self):

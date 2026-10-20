@@ -3,12 +3,13 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.http import HttpResponse
-from .models import Prenda, Gasto
-from .forms import GastoForm, ImportarPrendasForm, PrendaForm
+from .models import Prenda, Gasto, Pedido
+from .forms import GastoForm, ImportarPrendasForm, PedidoForm, PrendaForm
 import openpyxl
 from decimal import Decimal
 from django.db import transaction
 from django.db.models import Q, Sum
+from django.utils import timezone
 
 
 @login_required
@@ -236,3 +237,62 @@ def eliminar_gasto(request, pk):
         messages.success(request, 'Gasto eliminado.')
         return redirect('lista_gastos')
     return render(request, 'prendas/eliminar_gasto.html', {'gasto': gasto})
+
+
+def _resumen_pedido(pedido):
+    """Añade al pedido las cifras de seguimiento que se muestran en pantalla."""
+    prendas = list(pedido.prendas.all())
+    prendas_vendidas = [prenda for prenda in prendas if prenda.estado == 'vendido']
+    facturacion = sum(
+        (prenda.precio_vendido for prenda in prendas_vendidas if prenda.precio_vendido is not None),
+        Decimal('0.00'),
+    )
+    resultado_prendas_vendidas = sum(
+        (prenda.beneficio() for prenda in prendas_vendidas if prenda.beneficio() is not None),
+        Decimal('0.00'),
+    )
+    pedido.total_prendas = len(prendas)
+    pedido.vendidas = len(prendas_vendidas)
+    pedido.disponibles = sum(prenda.estado == 'disponible' for prenda in prendas)
+    pedido.facturacion = facturacion
+    pedido.pendiente_recuperar = max(Decimal('0.00'), pedido.inversion_total - facturacion)
+    pedido.balance = facturacion - pedido.inversion_total
+    pedido.resultado_prendas_vendidas = resultado_prendas_vendidas
+    pedido.porcentaje_recuperado = (
+        (facturacion / pedido.inversion_total * Decimal('100.00'))
+        if pedido.inversion_total else Decimal('0.00')
+    )
+    return pedido
+
+
+@login_required
+def lista_pedidos(request):
+    form = PedidoForm(initial={'fecha': timezone.localdate()})
+    if request.method == 'POST':
+        form = PedidoForm(request.POST)
+        if form.is_valid():
+            pedido = form.save()
+            messages.success(request, f'Pedido “{pedido.nombre}” creado. Ya puedes asociarle prendas.')
+            return redirect('detalle_pedido', pk=pedido.pk)
+
+    pedidos = [_resumen_pedido(pedido) for pedido in Pedido.objects.prefetch_related('prendas')]
+    return render(request, 'prendas/lista_pedidos.html', {'pedidos': pedidos, 'form': form})
+
+
+@login_required
+def detalle_pedido(request, pk):
+    pedido = _resumen_pedido(get_object_or_404(Pedido.objects.prefetch_related('prendas'), pk=pk))
+    return render(request, 'prendas/detalle_pedido.html', {'pedido': pedido, 'prendas': pedido.prendas.all()})
+
+
+@login_required
+def editar_pedido(request, pk):
+    pedido = get_object_or_404(Pedido, pk=pk)
+    form = PedidoForm(instance=pedido)
+    if request.method == 'POST':
+        form = PedidoForm(request.POST, instance=pedido)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Pedido actualizado correctamente.')
+            return redirect('detalle_pedido', pk=pedido.pk)
+    return render(request, 'prendas/editar_pedido.html', {'form': form, 'pedido': pedido})

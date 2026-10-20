@@ -17,6 +17,7 @@
         <a href="{% url 'exportar_excel' %}" class="btn nav-action">📥 Exportar Excel</a>
         <a href="{% url 'importar_prendas' %}" class="btn nav-action">📤 Importar Excel</a>
         <button class="btn nav-primary" data-bs-toggle="collapse" data-bs-target="#formNueva">+ Añadir prenda</button>
+        <a href="{% url 'lista_pedidos' %}" class="btn nav-action">📦 Pedidos</a>
         <a href="{% url 'lista_gastos' %}" class="btn nav-action">💸 Gastos extra</a>
         <form method="post" action="{% url 'logout' %}" class="m-0">
             {% csrf_token %}
@@ -114,6 +115,11 @@
                         <option value="disponible">Disponible</option>
                         <option value="vendido">Vendido</option>
                     </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label" for="{{ form.pedido.id_for_label }}">Pedido</label>
+                    {{ form.pedido }}
+                    <div class="form-text">Opcional: asóciala a una compra concreta.</div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-dark w-100">Guardar</button>

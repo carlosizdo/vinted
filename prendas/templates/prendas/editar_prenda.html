@@ -26,6 +26,7 @@
 
     <form method="POST">
         {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
 
         <div class="mb-3">
             <label class="form-label">Tipo de prenda</label>
@@ -86,7 +87,7 @@
 
         <div class="d-flex gap-2">
             <button type="submit" class="btn btn-dark">Guardar cambios</button>
-            <a href="{% url 'lista_prendas' %}" class="btn btn-outline-secondary">Cancelar</a>
+            <a href="{{ next_url|default:'/' }}" class="btn btn-outline-secondary">Cancelar</a>
         </div>
 
     </form>

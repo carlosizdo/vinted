@@ -89,6 +89,25 @@ class InventarioViewsTests(TestCase):
             ['2', '10', 'Caja P.', ''],
         )
 
+    def test_editar_prenda_vuelve_al_filtro_anterior(self):
+        prenda = Prenda.objects.create(
+            tipo_de_prenda='Camiseta', talla='M', color='Azul', marca='Zara',
+            donde_esta_subido='Vinted', precio_comprado=Decimal('10.00'), estado='disponible',
+        )
+        destino = '/?estado=disponible&marca=Zara&orden=localizador&vista=tabla'
+
+        response = self.client.post(
+            reverse('editar_prenda', args=[prenda.pk]),
+            {
+                'tipo_de_prenda': 'Camiseta actualizada', 'talla': 'M', 'color': 'Azul',
+                'marca': 'Zara', 'donde_esta_subido': 'Vinted', 'localizador': '2',
+                'precio_comprado': '10.00', 'precio_vendido': '', 'estado': 'disponible',
+                'pedido': '', 'next': destino,
+            },
+        )
+
+        self.assertRedirects(response, destino)
+
     def test_exportacion_incluye_fecha_de_alta(self):
         Prenda.objects.create(
             tipo_de_prenda='Pantalón', talla='M', color='Gris', marca='Marca',

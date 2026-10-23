@@ -3,6 +3,8 @@ from django.contrib import messages
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.http import HttpResponse
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from .models import Prenda, Gasto, Pedido
 from .forms import GastoForm, ImportarPrendasForm, PedidoForm, PrendaForm
 import openpyxl
@@ -10,6 +12,18 @@ from decimal import Decimal
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
+
+
+def _url_de_vuelta(request):
+    """Devuelve una URL local segura para volver al listado tal como estaba."""
+    next_url = request.POST.get('next') or request.GET.get('next')
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url,
+        allowed_hosts={request.get_host()},
+        require_https=request.is_secure(),
+    ):
+        return next_url
+    return reverse('lista_prendas')
 
 
 @login_required
@@ -110,25 +124,27 @@ def lista_prendas(request):
 def editar_prenda(request, pk):
     prenda = get_object_or_404(Prenda, pk=pk)
     form = PrendaForm(instance=prenda)
+    next_url = _url_de_vuelta(request)
 
     if request.method == 'POST':
         form = PrendaForm(request.POST, instance=prenda)
         if form.is_valid():
             form.save()
             messages.success(request, 'Prenda actualizada correctamente.')
-            return redirect('lista_prendas')
+            return redirect(_url_de_vuelta(request))
 
-    return render(request, 'prendas/editar_prenda.html', {'form': form, 'prenda': prenda})
+    return render(request, 'prendas/editar_prenda.html', {'form': form, 'prenda': prenda, 'next_url': next_url})
 
 
 @login_required
 def eliminar_prenda(request, pk):
     prenda = get_object_or_404(Prenda, pk=pk)
+    next_url = _url_de_vuelta(request)
     if request.method == 'POST':
         prenda.delete()
         messages.success(request, 'Prenda eliminada.')
-        return redirect('lista_prendas')
-    return render(request, 'prendas/eliminar_prenda.html', {'prenda': prenda})
+        return redirect(_url_de_vuelta(request))
+    return render(request, 'prendas/eliminar_prenda.html', {'prenda': prenda, 'next_url': next_url})
 
 
 @login_required

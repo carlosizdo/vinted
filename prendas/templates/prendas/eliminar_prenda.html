@@ -21,8 +21,9 @@
         <p class="form-intro">Vas a eliminar <strong>{{ prenda.tipo_de_prenda }}</strong> de {{ prenda.marca }}. Esta acción no se puede deshacer.</p>
         <form method="POST">
             {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next_url }}">
             <div class="d-flex gap-2 justify-content-center mt-3">
-                <a href="{% url 'lista_prendas' %}" class="btn btn-outline-secondary">Cancelar</a>
+                <a href="{{ next_url|default:'/' }}" class="btn btn-outline-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-danger">Sí, eliminar</button>
             </div>
         </form>

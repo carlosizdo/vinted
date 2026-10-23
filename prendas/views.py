@@ -44,6 +44,18 @@ def lista_prendas(request):
         prendas = prendas.order_by('-precio_vendido')
     elif orden == 'antiguas':
         prendas = prendas.order_by('id')
+    elif orden == 'localizador':
+        # Los localizadores son texto, pero los que contienen únicamente un
+        # número se ordenan como números: 1, 2, 10 (y no 1, 10, 2).
+        def clave_localizador(prenda):
+            localizador = (prenda.localizador or '').strip()
+            if localizador.isdigit():
+                return (0, int(localizador), '')
+            if localizador:
+                return (1, 0, localizador.casefold())
+            return (2, 0, '')
+
+        prendas = sorted(prendas, key=clave_localizador)
 
     tallas = Prenda.objects.values_list('talla', flat=True).distinct()
     marcas = Prenda.objects.values_list('marca', flat=True).distinct()

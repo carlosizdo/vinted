@@ -56,6 +56,7 @@
             <option value="antiguas" {% if orden == 'antiguas' %}selected{% endif %}>Más antiguas primero</option>
             <option value="precio_asc" {% if orden == 'precio_asc' %}selected{% endif %}>Precio: menor a mayor</option>
             <option value="precio_desc" {% if orden == 'precio_desc' %}selected{% endif %}>Precio: mayor a menor</option>
+            <option value="localizador" {% if orden == 'localizador' %}selected{% endif %}>Localizador: 1, 2, 3...</option>
         </select>
 
         <button type="submit" class="btn btn-dark">Filtrar</button>

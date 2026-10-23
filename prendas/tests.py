@@ -74,6 +74,21 @@ class InventarioViewsTests(TestCase):
         self.assertEqual(response.context['vista'], 'tabla')
         self.assertContains(response, '<table', html=False)
 
+    def test_ordena_localizadores_numericos_antes_que_los_de_texto(self):
+        for localizador in ('10', 'Caja P.', '2', ''):
+            Prenda.objects.create(
+                tipo_de_prenda=f'Prenda {localizador or "sin localizador"}', talla='M', color='Negro',
+                marca='Marca', donde_esta_subido='Vinted', precio_comprado=Decimal('10.00'),
+                estado='disponible', localizador=localizador,
+            )
+
+        response = self.client.get(reverse('lista_prendas'), {'orden': 'localizador'})
+
+        self.assertEqual(
+            [prenda.localizador for prenda in response.context['prendas'].object_list],
+            ['2', '10', 'Caja P.', ''],
+        )
+
     def test_exportacion_incluye_fecha_de_alta(self):
         Prenda.objects.create(
             tipo_de_prenda='Pantalón', talla='M', color='Gris', marca='Marca',

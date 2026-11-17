@@ -9,6 +9,12 @@ a { text-decoration:none; }
 .navbar-brand { display:flex; align-items:center; gap:10px; color:#fff!important; font-family:'Playfair Display',Georgia,serif; letter-spacing:-.45px; }
 .brand-mark { display:inline-grid; width:34px; height:34px; place-items:center; border-radius:11px; background:var(--gold); color:var(--brand-dark); font-family:'DM Sans',sans-serif; font-size:16px; }
 .navbar-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.app-navbar { gap:8px; }
+.app-navbar .navbar-actions { margin-left:auto; }
+.nav-more-btn { min-width:42px; font-size:1.1rem; line-height:1; }
+.nav-more .dropdown-menu { border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow); padding:6px; }
+.nav-more .dropdown-item { border-radius:9px; padding:10px 12px; font-size:.92rem; font-weight:600; color:var(--ink); }
+.nav-more .dropdown-item:active { background:var(--mint); color:var(--brand); }
 .nav-action { border:1px solid rgba(255,255,255,.48); background:rgba(255,255,255,.12); color:#fff!important; }
 .nav-action:hover,.nav-action:focus { background:rgba(255,255,255,.23); border-color:rgba(255,255,255,.8); color:#fff!important; }
 .nav-primary { border:1px solid var(--gold); background:var(--gold); color:var(--brand-dark)!important; }
@@ -27,7 +33,14 @@ a { text-decoration:none; }
 .page-heading { font-family:'Playfair Display',Georgia,serif; letter-spacing:-.6px; }
 .eyebrow { color:var(--muted); font-size:.76rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
 .toolbar,.tabs-wrap { background:rgba(255,255,255,.92); border-bottom:1px solid var(--line); }
-.filter-form { align-items:center; }
+.filter-form { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.filter-search { display:flex; flex:1 1 240px; gap:8px; min-width:0; }
+.filter-search .form-control { flex:1; min-width:0; }
+.filter-extra { flex-wrap:wrap; gap:8px; align-items:center; }
+.filter-talla { width:110px; }
+.filter-marca { width:160px; }
+.filter-orden { width:210px; }
+.filter-toggle { white-space:nowrap; }
 .form-control,.form-select { min-height:42px; border:1px solid #dce3de; border-radius:10px; background:#fff; color:var(--ink); font-size:.9rem; }
 .form-control::placeholder { color:#98a3a1; }
 .form-control:focus,.form-select:focus { border-color:#6fa49a; box-shadow:0 0 0 3px rgba(111,164,154,.15); }
@@ -59,20 +72,28 @@ a { text-decoration:none; }
 .table-icon-action:last-child:hover { background:#ffe3e3; }
 .prenda-card { overflow:hidden; border:1px solid var(--line)!important; border-radius:18px!important; background:var(--paper); box-shadow:0 3px 12px rgba(29,38,51,.035); transition:transform .2s ease,box-shadow .2s ease; }
 .prenda-card:hover { transform:translateY(-4px); box-shadow:var(--shadow); }
-.card-img-top { position:relative; height:112px; overflow:hidden; background:linear-gradient(135deg,#dceee7,#f8e7c0); }
-.card-img-top::before { content:'✦'; position:absolute; left:18px; top:14px; color:rgba(38,70,83,.52); font-size:22px; }
-.card-img-top::after { content:''; position:absolute; width:95px; height:95px; right:-18px; bottom:-37px; border:2px solid rgba(255,255,255,.62); border-radius:50%; }
-.card-body { padding:17px; }
-.card-title { color:var(--ink); font-size:1rem; font-weight:700; }
+.prenda-card { border-top:4px solid #cfd9d2!important; }
+.prenda-card.estado-disponible { border-top-color:#5fb592!important; }
+.prenda-card.estado-vendido { border-top-color:#5aaec2!important; }
+.prenda-card.estado-borrador { border-top-color:var(--gold)!important; }
+.prenda-card .card-body { display:flex; flex-direction:column; gap:6px; padding:16px; }
+.card-top { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px; margin-bottom:2px; }
+.card-title { margin:0; color:var(--ink); font-size:.98rem; font-weight:700; line-height:1.3; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
 .card-meta { color:var(--muted); font-size:.79rem; }
-.price { font-size:1.1rem; font-weight:700; letter-spacing:-.4px; }
+.card-price { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 8px; margin-top:auto; padding-top:8px; }
+.price { font-size:1.15rem; font-weight:700; letter-spacing:-.4px; white-space:nowrap; }
+.price-muted { color:#51606a; font-size:1rem; }
+.price-label { color:var(--muted); font-size:.72rem; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+.profit { padding:2px 7px; border-radius:999px; font-size:.74rem; font-weight:700; white-space:nowrap; }
+.profit.is-positive { background:#dcf3e7; color:#197056; }
+.profit.is-negative { background:#fde4e4; color:#a73737; }
 .badge { font-weight:700; padding:.42em .7em; }
 .badge-disponible { color:#197056; background:#dcf3e7; }
 .badge-vendido { color:#167087; background:#dff3f7; }
 .badge-borrador { color:#735b28; background:#fff1c9; }
 .locator-badge { background:#edf0ed; color:#53625c; }
-.profit-line { padding-top:10px; border-top:1px solid #eff1ef; color:var(--muted); font-size:.75rem; }
-.card-actions { display:flex; justify-content:flex-end; gap:8px; }
+.profit-line { color:var(--muted); font-size:.75rem; }
+.card-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6px; padding-top:10px; border-top:1px solid #eff1ef; }
 .icon-action { display:grid; width:40px; height:40px; place-items:center; border:1px solid #cfe4da; border-radius:12px; background:#eaf6ef; font-size:1rem; box-shadow:0 2px 5px rgba(29,38,51,.04); transition:transform .16s ease,box-shadow .16s ease,background .16s ease; }
 .icon-action:hover { transform:translateY(-2px) scale(1.04); background:#d8f0e2; box-shadow:0 6px 12px rgba(29,38,51,.12); }
 .icon-danger { border-color:#f1d1d1; background:#fff0f0; }
@@ -114,4 +135,43 @@ a { text-decoration:none; }
 .login-content h5 { font-family:'Playfair Display',Georgia,serif; font-size:1.6rem; }
 .login-footer { margin-top:18px; color:#64736c; font-size:.78rem; text-align:center; }
 
-@media (max-width:767px) { .navbar { padding:14px 16px!important; } .navbar > * { margin-bottom:6px; } .navbar-actions { width:100%; } .navbar-actions .btn { flex:1 1 auto; } .toolbar,.tabs-wrap { padding-left:16px!important; padding-right:16px!important; } .page-content { padding-left:16px!important; padding-right:16px!important; } .filter-form .form-control,.filter-form .form-select { max-width:none!important; flex:1 1 100%; } .nav-tabs { flex-wrap:nowrap; overflow-x:auto; } .nav-tabs .nav-link { white-space:nowrap; padding:12px 13px; } .inventory-header { align-items:start; flex-direction:column; } .table-responsive { border:0; } .bulk-tools { align-items:flex-start; flex-direction:column; } }
+@media (min-width:992px) { .filter-form { flex-wrap:nowrap; } .filter-extra { flex-wrap:nowrap; } }
+
+@media (max-width:767px) {
+  .navbar { padding:14px 16px!important; } .navbar > * { margin-bottom:6px; } .navbar-actions { width:100%; } .navbar-actions .btn { flex:1 1 auto; }
+  .toolbar,.tabs-wrap { padding-left:16px!important; padding-right:16px!important; } .page-content { padding-left:16px!important; padding-right:16px!important; }
+  .filter-form .form-control,.filter-form .form-select { max-width:none!important; flex:1 1 100%; }
+  .nav-tabs { flex-wrap:nowrap; overflow-x:auto; } .nav-tabs .nav-link { white-space:nowrap; padding:12px 13px; }
+  .inventory-header { align-items:start; flex-direction:column; } .table-responsive { border:0; } .bulk-tools { align-items:flex-start; flex-direction:column; }
+
+  /* Cabecera compacta: marca y «⋯» arriba, acciones principales en una fila. */
+  .app-navbar { flex-wrap:wrap; padding:10px 16px!important; min-height:0; }
+  .app-navbar > * { margin-bottom:0; }
+  .app-navbar .navbar-brand { order:0; margin-right:0; }
+  .app-navbar .nav-more { order:1; margin-left:auto; }
+  .app-navbar .navbar-actions { order:2; flex-wrap:nowrap; margin-left:0; }
+  .app-navbar .navbar-actions .btn { flex:1 1 0; padding:9px 6px; white-space:nowrap; }
+
+  /* Filtros: buscador + botón «Filtros»; el resto plegado. */
+  .toolbar { padding-top:10px!important; padding-bottom:10px!important; }
+  .filter-search { flex:1 1 100%; }
+  .filter-search .form-control { flex:1 1 auto; }
+  .filter-extra.show,.filter-extra.collapsing { display:flex; width:100%; }
+  .filter-extra .btn { flex:1 1 auto; }
+
+  /* Resumen más compacto en el móvil. */
+  .inventory-header p,.inventory-header > span,.stat-detail { display:none; }
+  .inventory-header { margin-bottom:12px; }
+  .stat-card { padding:14px; border-radius:14px; }
+  .stat-card::after { width:60px; height:60px; right:-18px; top:-18px; }
+  .stat-num { font-size:1.35rem; letter-spacing:-.6px; }
+
+  /* Tarjetas de prenda más densas: dos por fila. */
+  .prenda-card .card-body { padding:12px; gap:5px; }
+  .card-title { font-size:.88rem; }
+  .price { font-size:1rem; }
+  .icon-action { width:36px; height:36px; border-radius:10px; }
+}
+
+/* Modo app (añadida a la pantalla de inicio): respetar el notch y la barra inferior. */
+body { padding-bottom:env(safe-area-inset-bottom); }

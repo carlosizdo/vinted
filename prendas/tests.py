@@ -149,3 +149,42 @@ class InventarioViewsTests(TestCase):
         self.assertEqual(response.context['pedido'].facturacion, Decimal('45.00'))
         self.assertEqual(response.context['pedido'].pendiente_recuperar, Decimal('555.00'))
         self.assertEqual(response.context['pedido'].balance, Decimal('-555.00'))
+
+
+class FormatoTests(TestCase):
+    def test_euros_usa_formato_espanol(self):
+        from .templatetags.formato import euros
+        self.assertEqual(euros(Decimal('1197.17')), '1.197,17 €')
+        self.assertEqual(euros(Decimal('6.8')), '6,80 €')
+        self.assertEqual(euros(Decimal('-555')), '-555,00 €')
+        self.assertEqual(euros(None), '—')
+
+    def test_dato_oculta_marcadores_vacios(self):
+        from .templatetags.formato import dato
+        for vacio in ('-', '--', ' — ', '', None):
+            self.assertEqual(dato(vacio), '')
+        self.assertEqual(dato(' XL '), 'XL')
+
+
+class TarjetasInventarioTests(TestCase):
+    def setUp(self):
+        self.client.force_login(User.objects.create_user(username='usuario', password='secreto'))
+
+    def test_muestra_24_prendas_por_pagina(self):
+        for i in range(30):
+            Prenda.objects.create(
+                tipo_de_prenda=f'Prenda {i}', talla='M', color='Negro', marca='Marca',
+                donde_esta_subido='Vinted', precio_comprado=Decimal('5.00'), estado='disponible',
+            )
+        response = self.client.get(reverse('lista_prendas'))
+        self.assertEqual(len(response.context['prendas'].object_list), 24)
+
+    def test_tarjeta_oculta_datos_vacios_y_muestra_precio_de_compra(self):
+        Prenda.objects.create(
+            tipo_de_prenda='Falda azul', talla='-', color='-', marca='-', localizador='--',
+            donde_esta_subido='Vinted', precio_comprado=Decimal('1234.50'), estado='disponible',
+        )
+        response = self.client.get(reverse('lista_prendas'))
+        self.assertNotContains(response, 'Talla -')
+        self.assertNotContains(response, '📍 --')
+        self.assertContains(response, '1.234,50 €')

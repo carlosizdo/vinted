@@ -79,7 +79,7 @@ def lista_prendas(request):
     disponibles = Prenda.objects.filter(estado='disponible').count()
     borradores = Prenda.objects.filter(estado='borrador').count()
 
-    paginator = Paginator(prendas, 8)
+    paginator = Paginator(prendas, 24)
     page_number = request.GET.get('page')
     prendas = paginator.get_page(page_number)
 

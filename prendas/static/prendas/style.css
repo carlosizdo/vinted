@@ -45,6 +45,7 @@ a { text-decoration:none; }
 .form-control::placeholder { color:#98a3a1; }
 .form-control:focus,.form-select:focus { border-color:#6fa49a; box-shadow:0 0 0 3px rgba(111,164,154,.15); }
 .form-label { color:#52626a; font-size:.82rem; font-weight:700; }
+.label-opt { color:#98a3a1; font-weight:500; }
 
 .nav-tabs { gap:6px; border:0; }
 .nav-tabs .nav-link { border:0; border-radius:10px 10px 0 0; color:var(--muted); font-weight:600; padding:13px 16px; }
@@ -108,6 +109,13 @@ a { text-decoration:none; }
 .bottom-nav a.is-active { background:#e7f1ec; color:var(--brand); }
 .bottom-nav a.is-active span { filter:none; opacity:1; }
 .gastos-table td small { margin-top:2px; }
+
+/* Avisos flotantes y vuelta a la prenda tras vender o editar. */
+.toast-messages { position:fixed; top:calc(12px + env(safe-area-inset-top)); left:50%; z-index:1080; width:min(calc(100% - 24px),520px); transform:translateX(-50%); }
+.toast-messages .alert { box-shadow:0 12px 30px rgba(29,38,51,.18); }
+.prenda-ancla { scroll-margin-top:16px; }
+.prenda-ancla:target .prenda-card,tr.prenda-ancla:target { animation:resaltar 2.2s ease; }
+@keyframes resaltar { 0%,40% { box-shadow:0 0 0 3px var(--gold); } 100% { box-shadow:0 3px 12px rgba(29,38,51,.035); } }
 .icon-action { flex:none; display:grid; width:40px; height:40px; place-items:center; border:1px solid #cfe4da; border-radius:12px; background:#eaf6ef; font-size:1rem; box-shadow:0 2px 5px rgba(29,38,51,.04); transition:transform .16s ease,box-shadow .16s ease,background .16s ease; }
 .icon-action:hover { transform:translateY(-2px) scale(1.04); background:#d8f0e2; box-shadow:0 6px 12px rgba(29,38,51,.12); }
 .icon-danger { border-color:#f1d1d1; background:#fff0f0; }

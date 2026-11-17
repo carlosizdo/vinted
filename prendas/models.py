@@ -29,9 +29,9 @@ class Prenda(models.Model):
     ]
 
     tipo_de_prenda = models.CharField(max_length=100)
-    talla = models.CharField(max_length=10)
-    color = models.CharField(max_length=50)
-    marca = models.CharField(max_length=100)
+    talla = models.CharField(max_length=10, blank=True)
+    color = models.CharField(max_length=50, blank=True)
+    marca = models.CharField(max_length=100, blank=True)
     donde_esta_subido = models.CharField(max_length=200)
     precio_comprado = models.DecimalField(max_digits=8, decimal_places=2)
     precio_vendido = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)

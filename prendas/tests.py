@@ -235,3 +235,73 @@ class MarcarVendidaTests(TestCase):
     def test_formulario_de_pedido_usa_fecha_iso(self):
         response = self.client.get(reverse('lista_pedidos'))
         self.assertRegex(response.content.decode(), r'name="fecha" value="\d{4}-\d{2}-\d{2}"')
+
+
+class RevisionTests(TestCase):
+    def setUp(self):
+        self.client.force_login(User.objects.create_user(username='usuario', password='secreto'))
+
+    def crear(self, nombre, **extra):
+        datos = dict(tipo_de_prenda=nombre, talla='M', color='Negro', marca='Zara',
+                     donde_esta_subido='Vinted', precio_comprado=Decimal('5.00'), estado='disponible')
+        datos.update(extra)
+        return Prenda.objects.create(**datos)
+
+    def test_orden_por_precio_deja_sin_vender_al_final(self):
+        self.crear('Sin vender')
+        self.crear('Barata', precio_vendido=Decimal('3.00'), estado='vendido')
+        self.crear('Cara', precio_vendido=Decimal('50.00'), estado='vendido')
+        for orden, esperado in (('precio_desc', ['Cara', 'Barata', 'Sin vender']),
+                                ('precio_asc', ['Barata', 'Cara', 'Sin vender'])):
+            response = self.client.get(reverse('lista_prendas'), {'orden': orden})
+            nombres = [p.tipo_de_prenda for p in response.context['prendas'].object_list]
+            self.assertEqual(nombres, esperado, orden)
+
+    def test_desplegables_sin_repetidos_ni_guiones(self):
+        for i, (talla, marca) in enumerate([('M', 'Zara'), ('M', 'Zara'), ('-', '-'), ('L', 'adidas')]):
+            self.crear(f'P{i}', talla=talla, marca=marca)
+        response = self.client.get(reverse('lista_prendas'))
+        self.assertEqual(response.context['tallas'], ['L', 'M'])
+        self.assertEqual(response.context['marcas'], ['adidas', 'Zara'])
+
+    def test_se_puede_crear_prenda_sin_talla_color_ni_marca(self):
+        response = self.client.post(reverse('lista_prendas'), {
+            'tipo_de_prenda': 'Bolso', 'talla': '', 'color': '', 'marca': '',
+            'donde_esta_subido': 'Vinted', 'precio_comprado': '4.00', 'estado': 'disponible',
+        })
+        self.assertRedirects(response, reverse('lista_prendas'))
+        self.assertTrue(Prenda.objects.filter(tipo_de_prenda='Bolso', talla='').exists())
+
+    def _importar(self, *filas):
+        libro = openpyxl.Workbook()
+        hoja = libro.active
+        hoja.append(['Tipo', 'Talla', 'Color', 'Marca', 'Localizador', 'Donde subido', 'Precio comprado', 'Precio vendido', 'Beneficio', 'Estado'])
+        for fila in filas:
+            hoja.append(fila)
+        archivo = BytesIO()
+        libro.save(archivo)
+        archivo.seek(0)
+        archivo.name = 'prendas.xlsx'
+        return self.client.post(reverse('importar_prendas'), {'archivo': archivo})
+
+    def test_importar_celdas_vacias_no_guarda_none(self):
+        self._importar(['Gorra', None, None, None, None, 'Vinted', 2, None, None, 'Disponible'])
+        prenda = Prenda.objects.get(tipo_de_prenda='Gorra')
+        self.assertEqual((prenda.talla, prenda.color, prenda.marca, prenda.localizador), ('', '', '', ''))
+
+    def test_importar_texto_demasiado_largo_da_mensaje_claro(self):
+        response = self._importar(['Gorra', 'Talla única grande', 'Rojo', 'Nike', None, 'Vinted', 2, None, None, 'Disponible'])
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'más de 10 caracteres')
+        self.assertFalse(Prenda.objects.exists())
+
+    def test_editar_vuelve_a_la_prenda(self):
+        prenda = self.crear('Camisa')
+        response = self.client.get(reverse('lista_prendas'))
+        self.assertContains(response, f'%23prenda-{prenda.pk}')
+        self.assertContains(response, f'id="prenda-{prenda.pk}"')
+
+    def test_pagina_404_en_espanol(self):
+        response = self.client.get('/no-existe/')
+        self.assertEqual(response.status_code, 404)
+        self.assertContains(response, 'No encontramos esta página', status_code=404)

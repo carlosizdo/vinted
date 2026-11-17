@@ -7,11 +7,11 @@ from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from .models import Prenda, Gasto, Pedido
 from .forms import GastoForm, ImportarPrendasForm, PedidoForm, PrendaForm
-from .templatetags.formato import euros
+from .templatetags.formato import dato, euros
 import openpyxl
 from decimal import Decimal, InvalidOperation
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import F, Q, Sum
 from django.utils import timezone
 
 
@@ -25,6 +25,14 @@ def _url_de_vuelta(request):
     ):
         return next_url
     return reverse('lista_prendas')
+
+
+def _opciones_unicas(campo):
+    """Valores distintos de un campo, ordenados y sin marcadores de «sin dato»."""
+    # order_by() vacío: si no, el orden por defecto (-id) entra en el DISTINCT
+    # y devuelve un valor por prenda.
+    valores = Prenda.objects.order_by().values_list(campo, flat=True).distinct()
+    return sorted({v for v in valores if dato(v) == v and v}, key=str.casefold)
 
 
 @login_required
@@ -53,10 +61,12 @@ def lista_prendas(request):
         prendas = prendas.filter(talla=filtro_talla)
     if filtro_marca:
         prendas = prendas.filter(marca__icontains=filtro_marca)
+    # Las prendas sin precio de venta van siempre al final; entre ellas se
+    # ordenan por lo que costaron.
     if orden == 'precio_asc':
-        prendas = prendas.order_by('precio_vendido')
+        prendas = prendas.order_by(F('precio_vendido').asc(nulls_last=True), 'precio_comprado', '-id')
     elif orden == 'precio_desc':
-        prendas = prendas.order_by('-precio_vendido')
+        prendas = prendas.order_by(F('precio_vendido').desc(nulls_last=True), '-precio_comprado', '-id')
     elif orden == 'antiguas':
         prendas = prendas.order_by('id')
     elif orden == 'localizador':
@@ -72,8 +82,8 @@ def lista_prendas(request):
 
         prendas = sorted(prendas, key=clave_localizador)
 
-    tallas = Prenda.objects.values_list('talla', flat=True).distinct()
-    marcas = Prenda.objects.values_list('marca', flat=True).distinct()
+    tallas = _opciones_unicas('talla')
+    marcas = _opciones_unicas('marca')
 
     total = Prenda.objects.count()
     vendidas = Prenda.objects.filter(estado='vendido').count()
@@ -228,26 +238,38 @@ def importar_prendas(request):
                     raise ValueError('No parece ser un archivo exportado por la aplicación.')
 
                 estados = {'borrador': 'borrador', 'disponible': 'disponible', 'vendido': 'vendido'}
+                columnas = {
+                    'tipo_de_prenda': 'tipo', 'talla': 'talla', 'color': 'color', 'marca': 'marca',
+                    'localizador': 'localizador', 'donde_esta_subido': 'donde subido',
+                }
                 prendas = []
                 for numero, fila in enumerate(filas, start=2):
                     if not any(valor is not None and str(valor).strip() for valor in fila):
                         continue
                     try:
-                        estado = estados.get(str(fila[indices['estado']]).strip().lower())
+                        def celda(cabecera):
+                            indice = indices.get(cabecera)
+                            if indice is None or indice >= len(fila) or fila[indice] is None:
+                                return ''
+                            return str(fila[indice]).strip()
+
+                        textos = {}
+                        for campo, cabecera in columnas.items():
+                            valor = celda(cabecera)
+                            maximo = Prenda._meta.get_field(campo).max_length
+                            if len(valor) > maximo:
+                                raise ValueError(f'«{cabecera}» tiene más de {maximo} caracteres: «{valor}»')
+                            textos[campo] = valor
+                        if not textos['tipo_de_prenda']:
+                            raise ValueError('falta el tipo de prenda')
+
+                        estado = estados.get(celda('estado').lower())
                         if not estado:
                             raise ValueError('estado no válido')
-                        precio_comprado = Decimal(str(fila[indices['precio comprado']]))
-                        precio_vendido = None
-                        indice_venta = indices.get('precio vendido')
-                        if indice_venta is not None and fila[indice_venta] not in (None, ''):
-                            precio_vendido = Decimal(str(fila[indice_venta]))
+                        precio_comprado = Decimal(celda('precio comprado'))
+                        precio_vendido = Decimal(celda('precio vendido')) if celda('precio vendido') else None
                         prendas.append(Prenda(
-                            tipo_de_prenda=str(fila[indices['tipo']]).strip(),
-                            talla=str(fila[indices['talla']]).strip(),
-                            color=str(fila[indices['color']]).strip(),
-                            marca=str(fila[indices['marca']]).strip(),
-                            localizador=str(fila[indices.get('localizador', -1)] or '').strip() if 'localizador' in indices else '',
-                            donde_esta_subido=str(fila[indices['donde subido']]).strip(),
+                            **textos,
                             precio_comprado=precio_comprado,
                             precio_vendido=precio_vendido,
                             estado=estado,

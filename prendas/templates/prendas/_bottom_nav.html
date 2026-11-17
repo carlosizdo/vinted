@@ -1,0 +1,5 @@
+<nav class="bottom-nav d-md-none" aria-label="Secciones">
+    <a href="{% url 'lista_prendas' %}" class="{% if activo == 'inventario' %}is-active{% endif %}"{% if activo == 'inventario' %} aria-current="page"{% endif %}><span aria-hidden="true">👕</span>Inventario</a>
+    <a href="{% url 'lista_pedidos' %}" class="{% if activo == 'pedidos' %}is-active{% endif %}"{% if activo == 'pedidos' %} aria-current="page"{% endif %}><span aria-hidden="true">📦</span>Pedidos</a>
+    <a href="{% url 'lista_gastos' %}" class="{% if activo == 'gastos' %}is-active{% endif %}"{% if activo == 'gastos' %} aria-current="page"{% endif %}><span aria-hidden="true">💸</span>Gastos</a>
+</nav>

@@ -94,7 +94,21 @@ a { text-decoration:none; }
 .locator-badge { background:#edf0ed; color:#53625c; }
 .profit-line { color:var(--muted); font-size:.75rem; }
 .card-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:6px; padding-top:10px; border-top:1px solid #eff1ef; }
-.icon-action { display:grid; width:40px; height:40px; place-items:center; border:1px solid #cfe4da; border-radius:12px; background:#eaf6ef; font-size:1rem; box-shadow:0 2px 5px rgba(29,38,51,.04); transition:transform .16s ease,box-shadow .16s ease,background .16s ease; }
+.btn-sell { flex:1 1 auto; margin-right:auto; padding:0 10px; min-height:40px; border:1px solid #bfe0cf; background:#e3f4ea; color:#176342; white-space:nowrap; }
+.btn-sell:hover,.btn-sell:focus { background:#cfeedd; border-color:#a6d4bc; color:#0f4f33; }
+.table-sell { color:#176342; font-weight:700; }
+.sold-modal { border:0; border-radius:20px; box-shadow:0 24px 60px rgba(29,38,51,.2); }
+.sold-modal .modal-header,.sold-modal .modal-body,.sold-modal .modal-footer { padding-left:22px; padding-right:22px; }
+.sold-modal .form-control-lg { font-size:1.4rem; font-weight:700; }
+
+/* Barra de navegación inferior (solo móvil). */
+.bottom-nav { position:fixed; left:0; right:0; bottom:0; z-index:1030; display:flex; padding:6px 8px calc(6px + env(safe-area-inset-bottom)); background:rgba(255,255,255,.96); border-top:1px solid var(--line); box-shadow:0 -6px 20px rgba(29,38,51,.06); -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px); }
+.bottom-nav a { flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; padding:6px 4px; border-radius:12px; color:var(--muted); font-size:.72rem; font-weight:700; }
+.bottom-nav a span { font-size:1.25rem; line-height:1; filter:grayscale(1); opacity:.7; }
+.bottom-nav a.is-active { background:#e7f1ec; color:var(--brand); }
+.bottom-nav a.is-active span { filter:none; opacity:1; }
+.gastos-table td small { margin-top:2px; }
+.icon-action { flex:none; display:grid; width:40px; height:40px; place-items:center; border:1px solid #cfe4da; border-radius:12px; background:#eaf6ef; font-size:1rem; box-shadow:0 2px 5px rgba(29,38,51,.04); transition:transform .16s ease,box-shadow .16s ease,background .16s ease; }
 .icon-action:hover { transform:translateY(-2px) scale(1.04); background:#d8f0e2; box-shadow:0 6px 12px rgba(29,38,51,.12); }
 .icon-danger { border-color:#f1d1d1; background:#fff0f0; }
 .icon-danger:hover { background:#ffe0e0; }
@@ -147,10 +161,12 @@ a { text-decoration:none; }
   /* Cabecera compacta: marca y «⋯» arriba, acciones principales en una fila. */
   .app-navbar { flex-wrap:wrap; padding:10px 16px!important; min-height:0; }
   .app-navbar > * { margin-bottom:0; }
-  .app-navbar .navbar-brand { order:0; margin-right:0; }
-  .app-navbar .nav-more { order:1; margin-left:auto; }
-  .app-navbar .navbar-actions { order:2; flex-wrap:nowrap; margin-left:0; }
-  .app-navbar .navbar-actions .btn { flex:1 1 0; padding:9px 6px; white-space:nowrap; }
+  .app-navbar { flex-wrap:nowrap; }
+  .app-navbar .navbar-actions { width:auto; margin-left:auto; flex-wrap:nowrap; }
+  .app-navbar .navbar-actions .btn { padding:8px 12px; white-space:nowrap; }
+
+  /* Espacio para la barra inferior. */
+  body.has-bottom-nav { padding-bottom:calc(76px + env(safe-area-inset-bottom)); }
 
   /* Filtros: buscador + botón «Filtros»; el resto plegado. */
   .toolbar { padding-top:10px!important; padding-bottom:10px!important; }
@@ -171,6 +187,8 @@ a { text-decoration:none; }
   .card-title { font-size:.88rem; }
   .price { font-size:1rem; }
   .icon-action { width:36px; height:36px; border-radius:10px; }
+  .card-actions { flex-wrap:wrap; }
+  .btn-sell { flex:1 1 100%; margin-right:0; min-height:38px; }
 }
 
 /* Modo app (añadida a la pantalla de inicio): respetar el notch y la barra inferior. */

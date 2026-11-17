@@ -188,3 +188,50 @@ class TarjetasInventarioTests(TestCase):
         self.assertNotContains(response, 'Talla -')
         self.assertNotContains(response, '📍 --')
         self.assertContains(response, '1.234,50 €')
+
+
+class MarcarVendidaTests(TestCase):
+    def setUp(self):
+        self.client.force_login(User.objects.create_user(username='usuario', password='secreto'))
+        self.prenda = Prenda.objects.create(
+            tipo_de_prenda='Chaqueta', talla='M', color='Negro', marca='Zara',
+            donde_esta_subido='Vinted', precio_comprado=Decimal('5.00'), estado='disponible',
+        )
+
+    def test_marca_vendida_con_precio_con_coma(self):
+        response = self.client.post(
+            reverse('marcar_vendida', args=[self.prenda.pk]),
+            {'precio_vendido': '12,50', 'next': '/?estado=disponible'},
+        )
+        self.assertRedirects(response, '/?estado=disponible', fetch_redirect_response=False)
+        self.prenda.refresh_from_db()
+        self.assertEqual(self.prenda.estado, 'vendido')
+        self.assertEqual(self.prenda.precio_vendido, Decimal('12.50'))
+
+    def test_acepta_punto_y_miles(self):
+        self.client.post(reverse('marcar_vendida', args=[self.prenda.pk]), {'precio_vendido': '1.234,5 €'})
+        self.prenda.refresh_from_db()
+        self.assertEqual(self.prenda.precio_vendido, Decimal('1234.50'))
+
+    def test_precio_no_valido_no_cambia_la_prenda(self):
+        for valor in ('', 'abc', '-3', 'NaN'):
+            self.client.post(reverse('marcar_vendida', args=[self.prenda.pk]), {'precio_vendido': valor})
+        self.prenda.refresh_from_db()
+        self.assertEqual(self.prenda.estado, 'disponible')
+        self.assertIsNone(self.prenda.precio_vendido)
+
+    def test_get_no_modifica_nada(self):
+        self.client.get(reverse('marcar_vendida', args=[self.prenda.pk]))
+        self.prenda.refresh_from_db()
+        self.assertEqual(self.prenda.estado, 'disponible')
+
+    def test_editar_prenda_mantiene_el_precio_con_punto(self):
+        self.prenda.precio_comprado = Decimal('12.50')
+        self.prenda.save()
+        response = self.client.get(reverse('editar_prenda', args=[self.prenda.pk]))
+        self.assertContains(response, 'value="12.50"')
+        self.assertNotContains(response, 'value="12,50"')
+
+    def test_formulario_de_pedido_usa_fecha_iso(self):
+        response = self.client.get(reverse('lista_pedidos'))
+        self.assertRegex(response.content.decode(), r'name="fecha" value="\d{4}-\d{2}-\d{2}"')

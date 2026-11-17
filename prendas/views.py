@@ -7,8 +7,9 @@ from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from .models import Prenda, Gasto, Pedido
 from .forms import GastoForm, ImportarPrendasForm, PedidoForm, PrendaForm
+from .templatetags.formato import euros
 import openpyxl
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
@@ -134,6 +135,36 @@ def editar_prenda(request, pk):
             return redirect(_url_de_vuelta(request))
 
     return render(request, 'prendas/editar_prenda.html', {'form': form, 'prenda': prenda, 'next_url': next_url})
+
+
+def _leer_importe(texto):
+    """Convierte «12,50», «12.50» o «1.234,50 €» en Decimal; None si no es válido."""
+    texto = (texto or '').strip().replace('€', '').replace(' ', '').replace(' ', '')
+    if ',' in texto:
+        texto = texto.replace('.', '').replace(',', '.')
+    try:
+        importe = Decimal(texto)
+    except InvalidOperation:
+        return None
+    if not importe.is_finite() or importe < 0:
+        return None
+    return importe.quantize(Decimal('0.01'))
+
+
+@login_required
+def marcar_vendida(request, pk):
+    """Marca una prenda como vendida indicando solo el precio de venta."""
+    prenda = get_object_or_404(Prenda, pk=pk)
+    if request.method == 'POST':
+        precio = _leer_importe(request.POST.get('precio_vendido'))
+        if precio is None:
+            messages.error(request, 'Indica un precio de venta válido, por ejemplo 12,50.')
+        else:
+            prenda.precio_vendido = precio
+            prenda.estado = 'vendido'
+            prenda.save(update_fields=['precio_vendido', 'estado'])
+            messages.success(request, f'«{prenda.tipo_de_prenda}» vendida por {euros(precio)}.')
+    return redirect(_url_de_vuelta(request))
 
 
 @login_required

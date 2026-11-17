@@ -45,7 +45,8 @@ class PedidoForm(forms.ModelForm):
             'nombre': forms.TextInput(attrs={'class': 'form-control'}),
             'importe_compra': forms.NumberInput(attrs={'class': 'form-control', 'min': '0.01', 'step': '0.01'}),
             'gastos_extra': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'step': '0.01'}),
-            'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            # El selector de fecha del navegador solo entiende AAAA-MM-DD.
+            'fecha': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}, format='%Y-%m-%d'),
             'notas': forms.TextInput(attrs={'class': 'form-control'}),
         }
 

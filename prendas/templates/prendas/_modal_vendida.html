@@ -1,0 +1,27 @@
+<!-- MARCAR COMO VENDIDA -->
+<div class="modal fade" id="modalVendida" tabindex="-1" aria-labelledby="modalVendidaTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content sold-modal">
+            <form method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="next" id="nextVendida" value="{{ request.get_full_path }}">
+                <div class="modal-header border-0 pb-0">
+                    <div>
+                        <div class="eyebrow">Marcar como vendida</div>
+                        <h2 class="modal-title page-heading h5" id="modalVendidaTitulo">Prenda</h2>
+                    </div>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <label class="form-label" for="precioVendida">Precio de venta (€)</label>
+                    <input id="precioVendida" name="precio_vendido" type="text" inputmode="decimal" autocomplete="off" class="form-control form-control-lg" placeholder="0,00" required pattern="[0-9]+([.,][0-9]{1,2})?" title="Por ejemplo: 12,50">
+                    <div class="form-text" id="compraVendida"></div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark">Guardar venta</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

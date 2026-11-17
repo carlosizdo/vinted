@@ -305,3 +305,69 @@ class RevisionTests(TestCase):
         response = self.client.get('/no-existe/')
         self.assertEqual(response.status_code, 404)
         self.assertContains(response, 'No encontramos esta página', status_code=404)
+
+
+class PedidosMejorasTests(TestCase):
+    def setUp(self):
+        self.client.force_login(User.objects.create_user(username='usuario', password='secreto'))
+        self.pedido = Pedido.objects.create(nombre='Lote octubre', importe_compra=Decimal('100.00'),
+                                            gastos_extra=Decimal('0.01'))
+
+    def crear(self, nombre, **extra):
+        datos = dict(tipo_de_prenda=nombre, talla='M', color='Negro', marca='Zara',
+                     donde_esta_subido='Vinted', precio_comprado=Decimal('5.00'), estado='disponible')
+        datos.update(extra)
+        return Prenda.objects.create(**datos)
+
+    def test_asignar_varias_prendas_a_la_vez(self):
+        a, b = self.crear('A'), self.crear('B')
+        otro = Pedido.objects.create(nombre='Otro', importe_compra=Decimal('10'))
+        ocupada = self.crear('C', pedido=otro)
+        response = self.client.get(reverse('asignar_prendas', args=[self.pedido.pk]))
+        self.assertEqual({p.pk for p in response.context['prendas']}, {a.pk, b.pk})
+        self.client.post(reverse('asignar_prendas', args=[self.pedido.pk]), {'prendas': [a.pk, b.pk, ocupada.pk]})
+        self.assertEqual(set(self.pedido.prendas.values_list('pk', flat=True)), {a.pk, b.pk})
+        ocupada.refresh_from_db()
+        self.assertEqual(ocupada.pedido, otro)  # No se roba prendas de otros pedidos.
+
+    def test_quitar_prenda_del_pedido_no_la_borra(self):
+        prenda = self.crear('A', pedido=self.pedido)
+        self.client.post(reverse('quitar_de_pedido', args=[self.pedido.pk, prenda.pk]))
+        prenda.refresh_from_db()
+        self.assertIsNone(prenda.pedido)
+
+    def test_eliminar_pedido_conserva_prendas(self):
+        prenda = self.crear('A', pedido=self.pedido)
+        response = self.client.get(reverse('eliminar_pedido', args=[self.pedido.pk]))
+        self.assertTrue(Pedido.objects.filter(pk=self.pedido.pk).exists())  # GET solo pregunta.
+        self.client.post(reverse('eliminar_pedido', args=[self.pedido.pk]))
+        self.assertFalse(Pedido.objects.filter(pk=self.pedido.pk).exists())
+        prenda.refresh_from_db()
+        self.assertIsNone(prenda.pedido)
+
+    def test_repartir_coste_suma_exacta_y_solo_al_confirmar(self):
+        prendas = [self.crear(f'P{i}', pedido=self.pedido) for i in range(3)]
+        self.client.get(reverse('repartir_coste', args=[self.pedido.pk]))
+        self.assertEqual(Prenda.objects.get(pk=prendas[0].pk).precio_comprado, Decimal('5.00'))
+        self.client.post(reverse('repartir_coste', args=[self.pedido.pk]))
+        nuevos = sorted(Prenda.objects.filter(pedido=self.pedido).values_list('precio_comprado', flat=True))
+        self.assertEqual(sum(nuevos), Decimal('100.01'))
+        self.assertEqual(nuevos, [Decimal('33.33'), Decimal('33.34'), Decimal('33.34')])
+
+    def test_media_necesaria_por_prenda(self):
+        self.crear('Vendida', pedido=self.pedido, precio_vendido=Decimal('20.01'), estado='vendido')
+        for i in range(4):
+            self.crear(f'P{i}', pedido=self.pedido)
+        response = self.client.get(reverse('detalle_pedido', args=[self.pedido.pk]))
+        self.assertEqual(response.context['pedido'].media_necesaria, Decimal('20.00'))
+        self.assertContains(response, '20,00 €')
+
+    def test_nueva_prenda_desde_pedido_vuelve_al_pedido(self):
+        response = self.client.get(reverse('lista_prendas'), {'pedido': self.pedido.pk})
+        self.assertEqual(response.context['form'].initial.get('pedido'), self.pedido)
+        response = self.client.post(reverse('lista_prendas') + f'?pedido={self.pedido.pk}', {
+            'tipo_de_prenda': 'Bolso', 'donde_esta_subido': 'Vinted', 'precio_comprado': '4.00',
+            'estado': 'disponible', 'pedido': self.pedido.pk, 'volver_al_pedido': '1',
+        })
+        self.assertRedirects(response, reverse('detalle_pedido', args=[self.pedido.pk]))
+        self.assertTrue(self.pedido.prendas.filter(tipo_de_prenda='Bolso').exists())

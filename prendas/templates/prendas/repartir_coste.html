@@ -1,0 +1,48 @@
+{% load static formato %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Repartir coste · {{ pedido.nombre }}</title>
+    {% include 'prendas/_app_meta.html' %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'prendas/style.css' %}">
+</head>
+<body>
+<nav class="navbar app-navbar px-4 py-3">
+    <a href="{% url 'lista_prendas' %}" class="navbar-brand fw-semibold fs-5"><span class="brand-mark">M</span> Mi Tienda</a>
+    <div class="navbar-actions"><a href="{% url 'detalle_pedido' pedido.pk %}" class="btn nav-action">← Volver al pedido</a></div>
+</nav>
+<main class="page-shell page-content container-fluid px-4 py-4" style="max-width:820px;">
+    <div class="eyebrow">{{ pedido.nombre }}</div>
+    <h1 class="page-heading h3 mb-2">Repartir el coste entre las prendas</h1>
+    <p class="form-intro">
+        La inversión total del pedido (<strong>{{ pedido.inversion_total|euros }}</strong>) se repartirá a partes iguales entre sus
+        <strong>{{ reparto|length }} prenda{{ reparto|length|pluralize }}</strong>: unos <strong>{{ por_prenda|euros }}</strong> cada una.
+        Así el beneficio de cada prenda reflejará lo que te costó de verdad.
+    </p>
+    <div class="alert alert-warning">
+        <strong>Ojo:</strong> se sustituirá el precio de compra actual de estas prendas (ahora suman {{ suma_actual|euros }}).
+        Si más adelante cambias el importe del pedido o le añades prendas, puedes volver a repartirlo.
+    </div>
+
+    <div class="card table-card mb-4"><div class="table-responsive">
+        <table class="table inventory-table align-middle">
+            <thead><tr><th>Prenda</th><th class="text-end">Ahora</th><th class="text-end">Nuevo</th></tr></thead>
+            <tbody>
+                {% for prenda, nuevo in reparto %}
+                <tr><td><strong class="nombre-corto">{{ prenda.tipo_de_prenda }}</strong><small>{{ prenda.get_estado_display }}</small></td><td class="text-end text-nowrap text-muted">{{ prenda.precio_comprado|euros }}</td><td class="text-end text-nowrap"><strong>{{ nuevo|euros }}</strong></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div></div>
+
+    <form method="post" class="d-flex gap-2 justify-content-end">
+        {% csrf_token %}
+        <a href="{% url 'detalle_pedido' pedido.pk %}" class="btn btn-outline-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-dark">Repartir {{ pedido.inversion_total|euros }}</button>
+    </form>
+</main>
+</body>
+</html>

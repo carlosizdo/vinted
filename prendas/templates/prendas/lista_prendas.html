@@ -34,11 +34,7 @@
         </ul>
     </div>
 </nav>
-{% if messages %}
-<div class="toast-messages" role="status">
-    {% for message in messages %}<div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-success{% endif %} alert-dismissible fade show mb-2" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button></div>{% endfor %}
-</div>
-{% endif %}
+{% include 'prendas/_mensajes.html' %}
 <!-- BUSCADOR Y FILTROS -->
 <div class="toolbar px-4 py-3">
     <div class="page-shell">
@@ -80,7 +76,7 @@
     </form></div>
 </div>
 <!-- FORMULARIO NUEVA PRENDA -->
-<div class="collapse {% if form.errors %}show{% endif %}" id="formNueva">
+<div class="collapse {% if form.errors or pedido_inicial %}show{% endif %}" id="formNueva">
     <div class="container-fluid px-4 py-4 bg-white border-bottom"><div class="page-shell">
         <div class="d-flex align-items-center justify-content-between mb-3"><div><div class="eyebrow">Inventario</div><h5 class="mb-0 page-heading">Añadir una prenda</h5></div><button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#formNueva"></button></div>
         {% if form.errors %}
@@ -88,8 +84,10 @@
             Revisa los campos marcados: {{ form.errors }}
         </div>
         {% endif %}
+        {% if pedido_inicial %}<div class="order-help mb-3">Se añadirá al pedido <strong>{{ pedido_inicial.nombre }}</strong> y volverás a él al guardar.</div>{% endif %}
         <form method="POST">
             {% csrf_token %}
+            {% if pedido_inicial or request.POST.volver_al_pedido %}<input type="hidden" name="volver_al_pedido" value="1">{% endif %}
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">Tipo de prenda</label>
@@ -231,43 +229,7 @@
     {% else %}
     <div class="row g-3">
         {% for prenda in prendas %}
-        <div class="col-6 col-md-4 col-lg-3 prenda-ancla" id="prenda-{{ prenda.pk }}">
-            <div class="card prenda-card estado-{{ prenda.estado }} h-100">
-                {% with talla=prenda.talla|dato marca=prenda.marca|dato localizador=prenda.localizador|dato %}
-                <div class="card-body">
-                    <div class="card-top">
-                        <span class="badge rounded-pill badge-{{ prenda.estado }}">{{ prenda.get_estado_display }}</span>
-                        {% if localizador %}<span class="badge locator-badge" title="Localizador">📍 {{ localizador }}</span>{% endif %}
-                    </div>
-                    <h6 class="card-title">{{ prenda.tipo_de_prenda }}</h6>
-                    {% if talla or marca %}
-                    <p class="card-meta mb-0">{% if talla %}Talla {{ talla }}{% endif %}{% if talla and marca %} · {% endif %}{{ marca }}</p>
-                    {% endif %}
-                    <div class="card-price">
-                        {% if prenda.precio_vendido is not None %}
-                        <span class="price">{{ prenda.precio_vendido|euros }}</span>
-                        {% if prenda.beneficio is not None %}
-                        <span class="profit {% if prenda.beneficio >= 0 %}is-positive{% else %}is-negative{% endif %}">{% if prenda.beneficio >= 0 %}+{% endif %}{{ prenda.beneficio|euros }}</span>
-                        {% endif %}
-                        {% else %}
-                        <span class="price-label">Compra</span>
-                        <span class="price price-muted">{{ prenda.precio_comprado|euros }}</span>
-                        {% endif %}
-                    </div>
-                    {% if prenda.precio_vendido is not None %}
-                    <div class="profit-line">Comprada por {{ prenda.precio_comprado|euros }}</div>
-                    {% endif %}
-                    <div class="card-actions">
-                        {% if prenda.estado != 'vendido' %}
-                        <button type="button" class="btn btn-sell" data-bs-toggle="modal" data-bs-target="#modalVendida" data-url="{% url 'marcar_vendida' prenda.pk %}" data-id="{{ prenda.pk }}" data-nombre="{{ prenda.tipo_de_prenda }}" data-compra="{{ prenda.precio_comprado|euros }}" aria-label="Marcar {{ prenda.tipo_de_prenda }} como vendida">✓ Vendida</button>
-                        {% endif %}
-                        <a href="{% url 'editar_prenda' prenda.pk %}?next={{ request.get_full_path|urlencode }}%23prenda-{{ prenda.pk }}" class="icon-action" title="Editar {{ prenda.tipo_de_prenda }}" aria-label="Editar {{ prenda.tipo_de_prenda }}">✏️</a>
-                        <a href="{% url 'eliminar_prenda' prenda.pk %}?next={{ request.get_full_path|urlencode }}" class="icon-action icon-danger" title="Eliminar {{ prenda.tipo_de_prenda }}" aria-label="Eliminar {{ prenda.tipo_de_prenda }}">🗑️</a>
-                    </div>
-                </div>
-                {% endwith %}
-            </div>
-        </div>
+        {% include 'prendas/_tarjeta_prenda.html' %}
         {% empty %}
         <div class="col-12 text-center empty-state">
             <div class="empty-icon">✦</div><h5 class="mb-1">Todavía no hay prendas aquí</h5><p class="mb-0">Añade una prenda o importa tu archivo de Excel para empezar.</p>
@@ -294,59 +256,11 @@
 
 </main>
 
-<!-- MARCAR COMO VENDIDA -->
-<div class="modal fade" id="modalVendida" tabindex="-1" aria-labelledby="modalVendidaTitulo" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content sold-modal">
-            <form method="post" action="">
-                {% csrf_token %}
-                <input type="hidden" name="next" id="nextVendida" value="{{ request.get_full_path }}">
-                <div class="modal-header border-0 pb-0">
-                    <div>
-                        <div class="eyebrow">Marcar como vendida</div>
-                        <h2 class="modal-title page-heading h5" id="modalVendidaTitulo">Prenda</h2>
-                    </div>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                </div>
-                <div class="modal-body">
-                    <label class="form-label" for="precioVendida">Precio de venta (€)</label>
-                    <input id="precioVendida" name="precio_vendido" type="text" inputmode="decimal" autocomplete="off" class="form-control form-control-lg" placeholder="0,00" required pattern="[0-9]+([.,][0-9]{1,2})?" title="Por ejemplo: 12,50">
-                    <div class="form-text" id="compraVendida"></div>
-                </div>
-                <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-dark">Guardar venta</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
+{% include 'prendas/_modal_vendida.html' %}
 
 {% include 'prendas/_bottom_nav.html' with activo='inventario' %}
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-// Los avisos («Prenda vendida», etc.) se cierran solos a los 4 segundos.
-setTimeout(function () {
-    document.querySelectorAll('.toast-messages .alert').forEach(function (aviso) {
-        bootstrap.Alert.getOrCreateInstance(aviso).close();
-    });
-}, 4000);
-(function () {
-    var modal = document.getElementById('modalVendida');
-    if (!modal) return;
-    modal.addEventListener('show.bs.modal', function (event) {
-        var boton = event.relatedTarget;
-        modal.querySelector('form').action = boton.dataset.url;
-        modal.querySelector('.modal-title').textContent = boton.dataset.nombre;
-        modal.querySelector('#compraVendida').textContent = 'La compraste por ' + boton.dataset.compra;
-        modal.querySelector('#precioVendida').value = '';
-        modal.querySelector('#nextVendida').value = window.location.pathname + window.location.search + '#prenda-' + boton.dataset.id;
-    });
-    modal.addEventListener('shown.bs.modal', function () {
-        modal.querySelector('#precioVendida').focus();
-    });
-})();
-</script>
+<script src="{% static 'prendas/app.js' %}"></script>
 </body>
 </html>

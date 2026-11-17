@@ -110,6 +110,19 @@ a { text-decoration:none; }
 .bottom-nav a.is-active span { filter:none; opacity:1; }
 .gastos-table td small { margin-top:2px; }
 
+/* Pedidos: elegir prendas para un lote. */
+.pick-list { display:flex; flex-direction:column; gap:8px; }
+.pick-item { display:flex; align-items:center; gap:12px; padding:12px 14px; border:1px solid var(--line); border-radius:14px; background:#fff; cursor:pointer; transition:border-color .15s ease,background .15s ease; }
+.pick-item:has(input:checked) { border-color:#6fa49a; background:#f0f7f3; }
+.pick-item .form-check-input { flex:none; width:1.3em; height:1.3em; margin:0; }
+.pick-body { flex:1; min-width:0; }
+.pick-body strong { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.92rem; }
+.pick-body small { color:var(--muted); font-size:.76rem; }
+.pick-price { flex:none; color:#51606a; font-size:.85rem; font-weight:700; }
+.sticky-action { position:sticky; bottom:0; margin:16px -4px 0; padding:12px 4px calc(12px + env(safe-area-inset-bottom)); background:linear-gradient(transparent,var(--canvas) 30%); }
+.alert-warning { background:#fff6dc; color:#6b5216; }
+.nombre-corto { display:-webkit-box!important; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+
 /* Avisos flotantes y vuelta a la prenda tras vender o editar. */
 .toast-messages { position:fixed; top:calc(12px + env(safe-area-inset-top)); left:50%; z-index:1080; width:min(calc(100% - 24px),520px); transform:translateX(-50%); }
 .toast-messages .alert { box-shadow:0 12px 30px rgba(29,38,51,.18); }

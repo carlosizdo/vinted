@@ -94,12 +94,17 @@ def lista_prendas(request):
     page_number = request.GET.get('page')
     prendas = paginator.get_page(page_number)
 
-    form = PrendaForm()
+    # «Añadir prenda» desde un pedido: el formulario se abre con el pedido elegido
+    # y, al guardar, se vuelve al pedido.
+    pedido_inicial = Pedido.objects.filter(pk=request.GET.get('pedido')).first() if request.GET.get('pedido', '').isdigit() else None
+    form = PrendaForm(initial={'pedido': pedido_inicial} if pedido_inicial else None)
     if request.method == 'POST':
         form = PrendaForm(request.POST)
         if form.is_valid():
-            form.save()
+            prenda = form.save()
             messages.success(request, 'Prenda añadida correctamente.')
+            if prenda.pedido_id and request.POST.get('volver_al_pedido'):
+                return redirect('detalle_pedido', pk=prenda.pedido_id)
             return redirect('lista_prendas')
 
     prendas_vendidas = Prenda.objects.filter(estado='vendido')
@@ -128,6 +133,7 @@ def lista_prendas(request):
         'vista': vista,
         'tallas': tallas,
         'marcas': marcas,
+        'pedido_inicial': pedido_inicial,
     })
 
 
@@ -343,7 +349,20 @@ def _resumen_pedido(pedido):
         (facturacion / pedido.inversion_total * Decimal('100.00'))
         if pedido.inversion_total else Decimal('0.00')
     )
+    # Media a la que habría que vender lo que queda para cubrir la inversión.
+    pedido.por_vender = pedido.total_prendas - pedido.vendidas
+    pedido.media_necesaria = (
+        (pedido.pendiente_recuperar / pedido.por_vender).quantize(Decimal('0.01'))
+        if pedido.por_vender and pedido.pendiente_recuperar > 0 else None
+    )
     return pedido
+
+
+def _reparto_a_partes_iguales(total, prendas):
+    """Reparte `total` entre las prendas al céntimo; los céntimos sobrantes van a las primeras."""
+    centimos = int((total * 100).quantize(Decimal('1')))
+    base, resto = divmod(centimos, len(prendas))
+    return [(prenda, Decimal(base + (1 if i < resto else 0)) / 100) for i, prenda in enumerate(prendas)]
 
 
 @login_required
@@ -364,6 +383,82 @@ def lista_pedidos(request):
 def detalle_pedido(request, pk):
     pedido = _resumen_pedido(get_object_or_404(Pedido.objects.prefetch_related('prendas'), pk=pk))
     return render(request, 'prendas/detalle_pedido.html', {'pedido': pedido, 'prendas': pedido.prendas.all()})
+
+
+@login_required
+def asignar_prendas(request, pk):
+    """Vincula de una vez varias prendas sin pedido a este pedido."""
+    pedido = get_object_or_404(Pedido, pk=pk)
+    if request.method == 'POST':
+        ids = [i for i in request.POST.getlist('prendas') if i.isdigit()]
+        cuantas = Prenda.objects.filter(pk__in=ids, pedido__isnull=True).update(pedido=pedido)
+        if cuantas:
+            messages.success(request, f'{cuantas} {"prenda añadida" if cuantas == 1 else "prendas añadidas"} a «{pedido.nombre}».')
+        else:
+            messages.error(request, 'No has seleccionado ninguna prenda.')
+        return redirect('detalle_pedido', pk=pedido.pk)
+
+    busqueda = request.GET.get('busqueda', '').strip()
+    libres = Prenda.objects.filter(pedido__isnull=True)
+    if busqueda:
+        libres = libres.filter(
+            Q(tipo_de_prenda__icontains=busqueda) | Q(marca__icontains=busqueda) |
+            Q(color__icontains=busqueda) | Q(localizador__icontains=busqueda)
+        )
+    total_libres = libres.count()
+    limite = 200
+    return render(request, 'prendas/asignar_prendas.html', {
+        'pedido': pedido, 'prendas': libres[:limite], 'total_libres': total_libres,
+        'limite': limite, 'busqueda': busqueda,
+    })
+
+
+@login_required
+def quitar_de_pedido(request, pk, prenda_pk):
+    """Desvincula una prenda del pedido sin borrarla."""
+    prenda = get_object_or_404(Prenda, pk=prenda_pk, pedido_id=pk)
+    if request.method == 'POST':
+        prenda.pedido = None
+        prenda.save(update_fields=['pedido'])
+        messages.success(request, f'«{prenda.tipo_de_prenda}» ya no está en este pedido.')
+    return redirect('detalle_pedido', pk=pk)
+
+
+@login_required
+def eliminar_pedido(request, pk):
+    pedido = _resumen_pedido(get_object_or_404(Pedido.objects.prefetch_related('prendas'), pk=pk))
+    if request.method == 'POST':
+        nombre = pedido.nombre
+        pedido.delete()  # Las prendas se conservan: su pedido pasa a quedar vacío.
+        messages.success(request, f'Pedido «{nombre}» eliminado. Sus prendas siguen en el inventario.')
+        return redirect('lista_pedidos')
+    return render(request, 'prendas/eliminar_pedido.html', {'pedido': pedido})
+
+
+@login_required
+def repartir_coste(request, pk):
+    """Reparte la inversión del pedido a partes iguales entre sus prendas, previa confirmación."""
+    pedido = get_object_or_404(Pedido, pk=pk)
+    prendas = list(pedido.prendas.order_by('id'))
+    if not prendas:
+        messages.error(request, 'Este pedido no tiene prendas entre las que repartir el coste.')
+        return redirect('detalle_pedido', pk=pedido.pk)
+
+    reparto = _reparto_a_partes_iguales(pedido.inversion_total, prendas)
+    if request.method == 'POST':
+        with transaction.atomic():
+            for prenda, nuevo in reparto:
+                prenda.precio_comprado = nuevo
+                prenda.save(update_fields=['precio_comprado'])
+        messages.success(request, f'Coste repartido: {len(prendas)} prendas actualizadas.')
+        return redirect('detalle_pedido', pk=pedido.pk)
+
+    return render(request, 'prendas/repartir_coste.html', {
+        'pedido': pedido,
+        'reparto': reparto,
+        'suma_actual': sum((p.precio_comprado for p in prendas), Decimal('0.00')),
+        'por_prenda': reparto[0][1],
+    })
 
 
 @login_required

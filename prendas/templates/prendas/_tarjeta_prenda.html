@@ -1,0 +1,44 @@
+{% load formato %}<div class="col-6 col-md-4 col-lg-3 prenda-ancla" id="prenda-{{ prenda.pk }}">
+    <div class="card prenda-card estado-{{ prenda.estado }} h-100">
+        {% with talla=prenda.talla|dato marca=prenda.marca|dato localizador=prenda.localizador|dato %}
+        <div class="card-body">
+            <div class="card-top">
+                <span class="badge rounded-pill badge-{{ prenda.estado }}">{{ prenda.get_estado_display }}</span>
+                {% if localizador %}<span class="badge locator-badge" title="Localizador">📍 {{ localizador }}</span>{% endif %}
+            </div>
+            <h6 class="card-title">{{ prenda.tipo_de_prenda }}</h6>
+            {% if talla or marca %}
+            <p class="card-meta mb-0">{% if talla %}Talla {{ talla }}{% endif %}{% if talla and marca %} · {% endif %}{{ marca }}</p>
+            {% endif %}
+            <div class="card-price">
+                {% if prenda.precio_vendido is not None %}
+                <span class="price">{{ prenda.precio_vendido|euros }}</span>
+                {% if prenda.beneficio is not None %}
+                <span class="profit {% if prenda.beneficio >= 0 %}is-positive{% else %}is-negative{% endif %}">{% if prenda.beneficio >= 0 %}+{% endif %}{{ prenda.beneficio|euros }}</span>
+                {% endif %}
+                {% else %}
+                <span class="price-label">Compra</span>
+                <span class="price price-muted">{{ prenda.precio_comprado|euros }}</span>
+                {% endif %}
+            </div>
+            {% if prenda.precio_vendido is not None %}
+            <div class="profit-line">Comprada por {{ prenda.precio_comprado|euros }}</div>
+            {% endif %}
+            <div class="card-actions">
+                {% if prenda.estado != 'vendido' %}
+                <button type="button" class="btn btn-sell" data-bs-toggle="modal" data-bs-target="#modalVendida" data-url="{% url 'marcar_vendida' prenda.pk %}" data-id="{{ prenda.pk }}" data-nombre="{{ prenda.tipo_de_prenda }}" data-compra="{{ prenda.precio_comprado|euros }}" aria-label="Marcar {{ prenda.tipo_de_prenda }} como vendida">✓ Vendida</button>
+                {% endif %}
+                <a href="{% url 'editar_prenda' prenda.pk %}?next={{ request.get_full_path|urlencode }}%23prenda-{{ prenda.pk }}" class="icon-action" title="Editar {{ prenda.tipo_de_prenda }}" aria-label="Editar {{ prenda.tipo_de_prenda }}">✏️</a>
+                {% if en_pedido %}
+                <form method="post" action="{% url 'quitar_de_pedido' en_pedido.pk prenda.pk %}" class="m-0" onsubmit="return confirm('¿Quitar esta prenda del pedido? La prenda no se borra.');">
+                    {% csrf_token %}
+                    <button type="submit" class="icon-action icon-danger" title="Quitar del pedido" aria-label="Quitar {{ prenda.tipo_de_prenda }} del pedido">↩︎</button>
+                </form>
+                {% else %}
+                <a href="{% url 'eliminar_prenda' prenda.pk %}?next={{ request.get_full_path|urlencode }}" class="icon-action icon-danger" title="Eliminar {{ prenda.tipo_de_prenda }}" aria-label="Eliminar {{ prenda.tipo_de_prenda }}">🗑️</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endwith %}
+    </div>
+</div>

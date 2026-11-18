@@ -1,4 +1,6 @@
-{% load static %}<meta name="theme-color" content="#264653">
+{% load static %}<meta name="color-scheme" content="light dark">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#f4f5f2">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0e1416">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="Mi Tienda">
@@ -6,3 +8,13 @@
     <link rel="apple-touch-icon" href="{% static 'prendas/icono-180.png' %}">
     <link rel="icon" type="image/png" href="{% static 'prendas/icono-192.png' %}">
     <link rel="manifest" href="{% static 'prendas/manifest.webmanifest' %}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+    <script>
+    // Modo oscuro automático: sigue el ajuste del móvil o del ordenador.
+    (function () {
+        var oscuro = window.matchMedia('(prefers-color-scheme: dark)');
+        function aplicar() { document.documentElement.setAttribute('data-bs-theme', oscuro.matches ? 'dark' : 'light'); }
+        aplicar();
+        if (oscuro.addEventListener) oscuro.addEventListener('change', aplicar);
+    })();
+    </script>

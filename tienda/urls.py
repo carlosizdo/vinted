@@ -30,6 +30,7 @@ urlpatterns = [
     path('exportar/', views.exportar_excel, name='exportar_excel'),
     path('importar/', views.importar_prendas, name='importar_prendas'),
     path('gastos/', views.lista_gastos, name='lista_gastos'),
+    path('resumen/', views.resumen, name='resumen'),
     path('gastos/eliminar/<int:pk>/', views.eliminar_gasto, name='eliminar_gasto'),
     path('pedidos/', views.lista_pedidos, name='lista_pedidos'),
     path('pedidos/<int:pk>/', views.detalle_pedido, name='detalle_pedido'),

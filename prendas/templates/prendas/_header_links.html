@@ -1,0 +1,6 @@
+<nav class="header-links d-none d-md-flex" aria-label="Secciones">
+    <a href="{% url 'lista_prendas' %}" class="{% if activo == 'inventario' %}is-active{% endif %}"><i class="ti ti-shirt" aria-hidden="true"></i>Inventario</a>
+    <a href="{% url 'lista_pedidos' %}" class="{% if activo == 'pedidos' %}is-active{% endif %}"><i class="ti ti-package" aria-hidden="true"></i>Pedidos</a>
+    <a href="{% url 'lista_gastos' %}" class="{% if activo == 'gastos' %}is-active{% endif %}"><i class="ti ti-receipt" aria-hidden="true"></i>Gastos</a>
+    <a href="{% url 'resumen' %}" class="{% if activo == 'resumen' %}is-active{% endif %}"><i class="ti ti-chart-line" aria-hidden="true"></i>Resumen</a>
+</nav>

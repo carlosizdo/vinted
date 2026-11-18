@@ -11,41 +11,41 @@
 </head>
 <body class="has-bottom-nav">
 
-<!-- NAV -->
-<nav class="navbar app-navbar px-4 py-3">
-    <a href="{% url 'lista_prendas' %}" class="navbar-brand fw-semibold fs-5"><span class="brand-mark">M</span> Mi Tienda</a>
+<nav class="navbar app-navbar px-4">
+    <a href="{% url 'lista_prendas' %}" class="navbar-brand"><span class="brand-mark">M</span>Mi tienda</a>
+    {% include 'prendas/_header_links.html' with activo='inventario' %}
     <div class="navbar-actions">
-        <button class="btn nav-primary" data-bs-toggle="collapse" data-bs-target="#formNueva">+ Añadir prenda</button>
-        <a href="{% url 'lista_pedidos' %}" class="btn nav-action d-none d-md-inline-block">📦 Pedidos</a>
-        <a href="{% url 'lista_gastos' %}" class="btn nav-action d-none d-md-inline-block">💸 Gastos extra</a>
-    </div>
-    <div class="dropdown nav-more">
-        <button class="btn nav-action nav-more-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Más opciones">⋯</button>
-        <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{% url 'exportar_excel' %}">📥 Exportar Excel</a></li>
-            <li><a class="dropdown-item" href="{% url 'importar_prendas' %}">📤 Importar Excel</a></li>
-            <li><hr class="dropdown-divider"></li>
-            <li>
-                <form method="post" action="{% url 'logout' %}" class="m-0">
-                    {% csrf_token %}
-                    <button type="submit" class="dropdown-item">Salir</button>
-                </form>
-            </li>
-        </ul>
+        <button type="button" class="round-btn" data-bs-toggle="collapse" data-bs-target="#panelBuscar" aria-expanded="{% if hay_filtros %}true{% else %}false{% endif %}" aria-controls="panelBuscar" aria-label="Buscar y filtrar"><i class="ti ti-search" aria-hidden="true"></i>{% if hay_filtros %}<span class="dot"></span>{% endif %}</button>
+        <button type="button" class="btn nav-primary d-none d-md-inline-flex" data-bs-toggle="collapse" data-bs-target="#formNueva"><i class="ti ti-plus" aria-hidden="true"></i>Añadir prenda</button>
+        <div class="dropdown nav-more">
+            <button class="btn nav-more-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Más opciones"><i class="ti ti-dots" aria-hidden="true"></i></button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'exportar_excel' %}"><i class="ti ti-download" aria-hidden="true"></i>Exportar Excel</a></li>
+                <li><a class="dropdown-item" href="{% url 'importar_prendas' %}"><i class="ti ti-upload" aria-hidden="true"></i>Importar Excel</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <form method="post" action="{% url 'logout' %}" class="m-0">
+                        {% csrf_token %}
+                        <button type="submit" class="dropdown-item"><i class="ti ti-logout" aria-hidden="true"></i>Salir</button>
+                    </form>
+                </li>
+            </ul>
+        </div>
     </div>
 </nav>
 {% include 'prendas/_mensajes.html' %}
-<!-- BUSCADOR Y FILTROS -->
-<div class="toolbar px-4 py-3">
+
+<!-- BUSCADOR Y FILTROS (se abren con la lupa) -->
+<div class="collapse {% if hay_filtros %}show{% endif %}" id="panelBuscar">
+<div class="toolbar px-4 pt-3">
     <div class="page-shell">
     <form method="GET" class="filter-form">
         <input type="hidden" name="estado" value="{{ estado }}">
         <input type="hidden" name="vista" value="{{ vista }}">
         <div class="filter-search">
-            <input type="search" name="busqueda" value="{{ busqueda }}" class="form-control" placeholder="Buscar nombre, marca, color, localizador..." aria-label="Buscar prendas">
-            <button type="button" class="btn btn-outline-secondary filter-toggle d-md-none" data-bs-toggle="collapse" data-bs-target="#filtrosExtra" aria-expanded="{% if filtro_talla or filtro_marca or orden %}true{% else %}false{% endif %}" aria-controls="filtrosExtra">Filtros{% if filtro_talla or filtro_marca or orden %} •{% endif %}</button>
+            <label class="search-field"><i class="ti ti-search" aria-hidden="true"></i><input type="search" name="busqueda" value="{{ busqueda }}" class="form-control" placeholder="Buscar nombre, marca, color, localizador" aria-label="Buscar prendas"></label>
         </div>
-        <div class="collapse d-md-flex filter-extra {% if filtro_talla or filtro_marca or orden %}show{% endif %}" id="filtrosExtra">
+        <div class="d-flex filter-extra">
         <select name="talla" class="form-select filter-talla" aria-label="Talla">
             <option value="">Talla</option>
             {% for talla in tallas %}
@@ -68,16 +68,18 @@
             <option value="localizador" {% if orden == 'localizador' %}selected{% endif %}>Localizador: 1, 2, 3...</option>
         </select>
 
-        <button type="submit" class="btn btn-dark">Filtrar</button>
+        <button type="submit" class="btn btn-dark">Aplicar</button>
         {% if busqueda or filtro_talla or filtro_marca or orden %}
-        <a href="?estado={{ estado|urlencode }}&vista={{ vista }}" class="btn btn-outline-secondary">✕ Limpiar</a>
+        <a href="?estado={{ estado|urlencode }}&vista={{ vista }}" class="btn btn-outline-secondary"><i class="ti ti-x" aria-hidden="true"></i>Limpiar</a>
         {% endif %}
         </div>
-    </form></div>
+    </form>
+    </div>
+</div>
 </div>
 <!-- FORMULARIO NUEVA PRENDA -->
-<div class="collapse {% if form.errors or pedido_inicial %}show{% endif %}" id="formNueva">
-    <div class="container-fluid px-4 py-4 bg-white border-bottom"><div class="page-shell">
+<div class="collapse {% if form.errors or pedido_inicial or abrir_nuevo %}show{% endif %}" id="formNueva">
+    <div class="container-fluid px-4 pt-3 pb-1"><div class="page-shell"><div class="card"><div class="card-body p-3 p-md-4">
         <div class="d-flex align-items-center justify-content-between mb-3"><div><div class="eyebrow">Inventario</div><h5 class="mb-0 page-heading">Añadir una prenda</h5></div><button type="button" class="btn-close" data-bs-toggle="collapse" data-bs-target="#formNueva"></button></div>
         {% if form.errors %}
         <div class="alert alert-danger">
@@ -91,7 +93,7 @@
             <div class="row g-3">
                 <div class="col-md-4">
                     <label class="form-label">Tipo de prenda</label>
-                    <input type="text" name="tipo_de_prenda" value="{{ form.tipo_de_prenda.value|default_if_none:'' }}" class="form-control" placeholder="Ej: Camiseta" required>
+                    <input type="text" name="tipo_de_prenda" value="{{ form.tipo_de_prenda.value|default_if_none:'' }}" class="form-control" placeholder="Camiseta Nike negra" required>
                 </div>
                 <div class="col-6 col-md-2">
                     <label class="form-label">Talla <span class="label-opt">(opcional)</span></label>
@@ -135,77 +137,40 @@
                     <div class="form-text">Opcional: asóciala a una compra concreta.</div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
-                    <button type="submit" class="btn btn-dark w-100">Guardar</button>
+                    <button type="submit" class="btn btn-dark w-100"><i class="ti ti-check" aria-hidden="true"></i>Guardar</button>
                 </div>
             </div>
         </form>
-    </div></div>
-</div>
-<!-- TABS -->
-<div class="tabs-wrap px-4"><div class="page-shell">
-    <ul class="nav nav-tabs border-bottom-0">
-        <li class="nav-item">
-            <a href="?estado=todas" class="nav-link {% if estado == 'todas' %}active{% endif %}">
-                Todas <span class="badge rounded-pill locator-badge ms-1">{{ total }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="?estado=disponible" class="nav-link {% if estado == 'disponible' %}active{% endif %}">
-                Disponibles <span class="badge rounded-pill locator-badge ms-1">{{ disponibles }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="?estado=vendido" class="nav-link {% if estado == 'vendido' %}active{% endif %}">
-                Vendidas <span class="badge rounded-pill locator-badge ms-1">{{ vendidas }}</span>
-            </a>
-        </li>
-        <li class="nav-item">
-            <a href="?estado=borrador" class="nav-link {% if estado == 'borrador' %}active{% endif %}">
-                Borradores <span class="badge rounded-pill locator-badge ms-1">{{ borradores }}</span>
-            </a>
-        </li>
-    </ul></div>
+    </div></div></div></div>
 </div>
 
 <!-- CONTENIDO -->
-<main class="page-shell page-content container-fluid px-4 py-4">
+<main class="page-shell page-content container-fluid px-4 py-3">
 
-    <div class="inventory-header"><div><div class="eyebrow">Resumen de negocio</div><h1 class="page-heading h2 mb-1">Tu inventario</h1><p>Controla existencias, ventas y resultado de las prendas vendidas.</p></div><span class="small text-muted">{{ total }} prendas registradas</span></div>
+    <!-- RESUMEN -->
+    <section class="hero-card mb-3" aria-label="Resumen del negocio">
+        <div class="hero-label">Resultado neto</div>
+        <div class="hero-num">{% if resultado_neto > 0 %}+{% endif %}{{ resultado_neto|euros }}</div>
+        <div class="hero-stats">
+            <div><strong>{{ vendidas }}</strong><span>vendidas</span></div>
+            <div><strong>{{ disponibles }}</strong><span>en stock</span></div>
+            <div><strong>{{ facturacion_total|euros }}</strong><span>bruto vendido</span></div>
+            <div><strong>{{ dinero_gastado|euros }}</strong><span>invertido</span></div>
+        </div>
+    </section>
 
-    <!-- STATS -->
-    <div class="row g-3 mb-4">
-        <div class="col-6 col-md-4 col-xl-2">
-            <div class="stat-card">
-                <div class="stat-label">Total prendas</div>
-                <div class="stat-num">{{ total }}</div>
-            </div>
+    <!-- PESTAÑAS -->
+    <div class="pill-bar mb-3">
+        <nav class="pill-tabs" aria-label="Filtrar por estado">
+        <a href="?estado=todas&vista={{ vista }}" class="pill {% if estado == 'todas' %}is-active{% endif %}">Todas <span>{{ total }}</span></a>
+        <a href="?estado=disponible&vista={{ vista }}" class="pill {% if estado == 'disponible' %}is-active{% endif %}">Disponibles <span>{{ disponibles }}</span></a>
+        <a href="?estado=vendido&vista={{ vista }}" class="pill {% if estado == 'vendido' %}is-active{% endif %}">Vendidas <span>{{ vendidas }}</span></a>
+        <a href="?estado=borrador&vista={{ vista }}" class="pill {% if estado == 'borrador' %}is-active{% endif %}">Borradores <span>{{ borradores }}</span></a>
+        </nav>
+        <div class="view-toggle" role="group" aria-label="Vista">
+            <a href="?estado={{ estado|urlencode }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista=tarjetas" class="{% if vista == 'tarjetas' %}is-active{% endif %}" aria-label="Ver como tarjetas"><i class="ti ti-layout-grid" aria-hidden="true"></i></a>
+            <a href="?estado={{ estado|urlencode }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista=tabla" class="{% if vista == 'tabla' %}is-active{% endif %}" aria-label="Ver como tabla"><i class="ti ti-list" aria-hidden="true"></i></a>
         </div>
-        <div class="col-6 col-md-4 col-xl-2">
-            <div class="stat-card">
-                <div class="stat-label">Vendidas</div>
-                <div class="stat-num text-success">{{ vendidas }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-4 col-xl-2">
-            <div class="stat-card">
-                <div class="stat-label">Disponibles</div>
-                <div class="stat-num">{{ disponibles }}</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-4 col-xl-2"><div class="stat-card"><div class="stat-label">Dinero gastado</div><div class="stat-num">{{ dinero_gastado|euros }}</div><small class="stat-detail">Suma de todos los precios de compra</small></div></div>
-        <div class="col-6 col-md-4 col-xl-2"><div class="stat-card"><div class="stat-label">Bruto vendido</div><div class="stat-num">{{ facturacion_total|euros }}</div><small class="stat-detail">Suma de todas las ventas, sin restar compras</small></div></div>
-        <div class="col-6 col-md-4 col-xl-2">
-            <div class="stat-card stat-highlight">
-                <div class="stat-label">Resultado neto</div>
-                <div class="stat-num">{{ resultado_neto|euros }}</div>
-                <small class="stat-detail">Ventas de prendas vendidas menos su precio de compra</small>
-            </div>
-        </div>
-    </div>
-    <div class="view-switch mb-3">
-        <span class="small text-muted me-1">Ver como</span>
-        <a href="?estado={{ estado|urlencode }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista=tarjetas" class="btn btn-sm {% if vista == 'tarjetas' %}btn-dark{% else %}btn-outline-secondary{% endif %}">▦ Tarjetas</a>
-        <a href="?estado={{ estado|urlencode }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista=tabla" class="btn btn-sm {% if vista == 'tabla' %}btn-dark{% else %}btn-outline-secondary{% endif %}">☷ Tabla</a>
     </div>
     {% if vista == 'tabla' %}
     <div class="card table-card"><div class="table-responsive">
@@ -218,7 +183,7 @@
                     <td>{{ prenda.talla|dato|default:"—" }}</td><td>{{ prenda.marca|dato|default:"—" }}</td><td>{{ prenda.localizador|dato|default:"—" }}</td><td>{{ prenda.donde_esta_subido|dato|default:"—" }}</td>
                     <td class="text-end text-nowrap">{{ prenda.precio_comprado|euros }}</td><td class="text-end text-nowrap">{{ prenda.precio_vendido|euros }}</td>
                     <td><span class="badge rounded-pill badge-{{ prenda.estado }}">{{ prenda.get_estado_display }}</span></td>
-                    <td class="text-end text-nowrap">{% if prenda.estado != 'vendido' %}<button type="button" class="table-icon-action table-sell" data-bs-toggle="modal" data-bs-target="#modalVendida" data-url="{% url 'marcar_vendida' prenda.pk %}" data-id="{{ prenda.pk }}" data-nombre="{{ prenda.tipo_de_prenda }}" data-compra="{{ prenda.precio_comprado|euros }}" title="Marcar {{ prenda.tipo_de_prenda }} como vendida" aria-label="Marcar {{ prenda.tipo_de_prenda }} como vendida">✓</button>{% endif %}<a href="{% url 'editar_prenda' prenda.pk %}?next={{ request.get_full_path|urlencode }}%23prenda-{{ prenda.pk }}" class="table-icon-action" title="Editar {{ prenda.tipo_de_prenda }}" aria-label="Editar {{ prenda.tipo_de_prenda }}">✏️</a><a href="{% url 'eliminar_prenda' prenda.pk %}?next={{ request.get_full_path|urlencode }}" class="table-icon-action" title="Eliminar {{ prenda.tipo_de_prenda }}" aria-label="Eliminar {{ prenda.tipo_de_prenda }}">🗑️</a></td>
+                    <td class="text-end text-nowrap">{% if prenda.estado != 'vendido' %}<button type="button" class="table-icon-action table-sell" data-bs-toggle="modal" data-bs-target="#modalVendida" data-url="{% url 'marcar_vendida' prenda.pk %}" data-id="{{ prenda.pk }}" data-nombre="{{ prenda.tipo_de_prenda }}" data-compra="{{ prenda.precio_comprado|euros }}" title="Marcar {{ prenda.tipo_de_prenda }} como vendida" aria-label="Marcar {{ prenda.tipo_de_prenda }} como vendida"><i class="ti ti-check" aria-hidden="true"></i></button>{% endif %}<a href="{% url 'editar_prenda' prenda.pk %}?next={{ request.get_full_path|urlencode }}%23prenda-{{ prenda.pk }}" class="table-icon-action" title="Editar {{ prenda.tipo_de_prenda }}" aria-label="Editar {{ prenda.tipo_de_prenda }}"><i class="ti ti-pencil" aria-hidden="true"></i></a><a href="{% url 'eliminar_prenda' prenda.pk %}?next={{ request.get_full_path|urlencode }}" class="table-icon-action is-danger" title="Eliminar {{ prenda.tipo_de_prenda }}" aria-label="Eliminar {{ prenda.tipo_de_prenda }}"><i class="ti ti-trash" aria-hidden="true"></i></a></td>
                 </tr>
                 {% empty %}
                 <tr><td colspan="9" class="text-center text-muted py-5">No hay prendas con estos filtros.</td></tr>
@@ -232,7 +197,7 @@
         {% include 'prendas/_tarjeta_prenda.html' %}
         {% empty %}
         <div class="col-12 text-center empty-state">
-            <div class="empty-icon">✦</div><h5 class="mb-1">Todavía no hay prendas aquí</h5><p class="mb-0">Añade una prenda o importa tu archivo de Excel para empezar.</p>
+            <div class="empty-icon"><i class="ti ti-shirt" aria-hidden="true"></i></div><h5 class="mb-1">No hay prendas aquí</h5><p class="mb-0">Prueba con otro filtro o añade una prenda con el botón +.</p>
         </div>
         {% endfor %}
     </div>
@@ -241,15 +206,15 @@
     {% if prendas.has_other_pages %}
         <div class="d-flex justify-content-center mt-4 gap-2">
             {% if prendas.has_previous %}
-                <a href="?estado={{ estado|urlencode }}&page={{ prendas.previous_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista={{ vista }}" class="btn btn-outline-secondary">← Anterior</a>
+                <a href="?estado={{ estado|urlencode }}&page={{ prendas.previous_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista={{ vista }}" class="btn btn-outline-secondary"><i class="ti ti-chevron-left" aria-hidden="true"></i>Anterior</a>
             {% endif %}
 
-            <span class="btn btn-dark disabled">
+            <span class="btn btn-outline-secondary disabled">
                 Página {{ prendas.number }} de {{ prendas.paginator.num_pages }}
             </span>
 
             {% if prendas.has_next %}
-                <a href="?estado={{ estado|urlencode }}&page={{ prendas.next_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista={{ vista }}" class="btn btn-outline-secondary">Siguiente →</a>
+                <a href="?estado={{ estado|urlencode }}&page={{ prendas.next_page_number }}&busqueda={{ busqueda|urlencode }}&talla={{ filtro_talla|urlencode }}&marca={{ filtro_marca|urlencode }}&orden={{ orden|urlencode }}&vista={{ vista }}" class="btn btn-outline-secondary">Siguiente<i class="ti ti-chevron-right" aria-hidden="true"></i></a>
             {% endif %}
         </div>
     {% endif %}

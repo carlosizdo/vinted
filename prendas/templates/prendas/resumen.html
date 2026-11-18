@@ -1,0 +1,121 @@
+{% load static formato %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Resumen · Mi Tienda</title>
+    {% include 'prendas/_app_meta.html' %}
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'prendas/style.css' %}">
+</head>
+<body class="has-bottom-nav">
+<nav class="navbar app-navbar px-4">
+    <a href="{% url 'lista_prendas' %}" class="navbar-brand"><span class="brand-mark">M</span>Mi tienda</a>
+    {% include 'prendas/_header_links.html' with activo='resumen' %}
+</nav>
+
+<main class="page-shell page-content container-fluid px-4 py-3">
+    <div class="inventory-header"><div><div class="eyebrow">Tu negocio</div><h1 class="page-heading h2 mb-1">Resumen</h1><p>Cómo van tus ventas y qué te deja más beneficio.</p></div></div>
+
+    <section class="hero-card mb-3" aria-label="Beneficio">
+        <div class="hero-label">Beneficio de lo vendido</div>
+        <div class="hero-num">{% if beneficio > 0 %}+{% endif %}{{ beneficio|euros }}</div>
+        <div class="hero-stats">
+            <div><strong>{{ beneficio_tras_gastos|euros }}</strong><span>tras gastos extra</span></div>
+            <div><strong>{{ n_vendidas }}</strong><span>prendas vendidas</span></div>
+            <div><strong>{% if margen_medio is not None %}{{ margen_medio|euros }}{% else %}—{% endif %}</strong><span>beneficio medio</span></div>
+            <div><strong>{% if precio_medio is not None %}{{ precio_medio|euros }}{% else %}—{% endif %}</strong><span>precio medio de venta</span></div>
+        </div>
+    </section>
+
+    <div class="row g-3 mb-3">
+        <div class="col-6 col-md-4"><div class="stat-card"><div class="stat-label">En stock</div><div class="stat-num">{{ n_stock }}</div><small class="stat-detail">Disponibles y borradores</small></div></div>
+        <div class="col-6 col-md-4"><div class="stat-card"><div class="stat-label">Valor del stock</div><div class="stat-num">{{ valor_stock|euros }}</div><small class="stat-detail">Lo que te costó lo que queda</small></div></div>
+        <div class="col-12 col-md-4"><div class="stat-card"><div class="stat-label">Gastos extra</div><div class="stat-num text-danger">{{ gastos_extra|euros }}</div><small class="stat-detail">Bolsas, etiquetas, envíos…</small></div></div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <section class="chart-card h-100">
+                <h2>Ventas por mes</h2>
+                <p>Dinero vendido y beneficio de los últimos 6 meses.</p>
+                {% if hay_ventas_con_fecha %}
+                <div class="chart-box"><canvas id="graficaVentas" role="img" aria-label="Gráfica de ventas y beneficio por mes"></canvas></div>
+                {% else %}
+                <div class="empty-state text-center py-4"><div class="empty-icon"><i class="ti ti-chart-bar" aria-hidden="true"></i></div><p class="mb-0">Aún no hay ventas con fecha. A partir de ahora, cada prenda que marques como vendida aparecerá aquí en su mes.</p></div>
+                {% endif %}
+            </section>
+        </div>
+        <div class="col-lg-6">
+            <section class="chart-card h-100">
+                <h2>Prendas añadidas por mes</h2>
+                <p>Cuántas prendas has subido al inventario cada mes.</p>
+                <div class="chart-box"><canvas id="graficaAltas" role="img" aria-label="Gráfica de prendas añadidas por mes"></canvas></div>
+            </section>
+        </div>
+        <div class="col-12">
+            <section class="chart-card">
+                <h2>Marcas que más beneficio te dejan</h2>
+                <p>Según las prendas vendidas que tienen marca.</p>
+                {% if top_marcas %}
+                <ol class="rank-list">
+                    {% for marca in top_marcas %}
+                    <li><span class="rank-pos">{{ forloop.counter }}</span><span class="rank-name">{{ marca.nombre }}<small>{{ marca.n }} vendida{{ marca.n|pluralize }}</small></span><span class="rank-value {% if marca.beneficio >= 0 %}text-success{% else %}text-danger{% endif %}">{% if marca.beneficio >= 0 %}+{% endif %}{{ marca.beneficio|euros }}</span></li>
+                    {% endfor %}
+                </ol>
+                {% else %}
+                <p class="mb-0">Todavía no hay ventas de prendas con marca.</p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+</main>
+
+{% include 'prendas/_bottom_nav.html' with activo='resumen' %}
+{{ grafica|json_script:"datosGrafica" }}
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+    var datos = JSON.parse(document.getElementById('datosGrafica').textContent);
+    var css = getComputedStyle(document.documentElement);
+    var color = function (nombre) { return css.getPropertyValue(nombre).trim(); };
+    var euros = new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' });
+    Chart.defaults.font.family = "'DM Sans', sans-serif";
+    Chart.defaults.color = color('--muted');
+    Chart.defaults.borderColor = color('--line');
+    var comunes = {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 600, easing: 'easeOutQuart' },
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true } } },
+        scales: { x: { grid: { display: false } }, y: { beginAtZero: true, ticks: { maxTicksLimit: 5 } } }
+    };
+
+    var ventas = document.getElementById('graficaVentas');
+    if (ventas) {
+        new Chart(ventas, {
+            type: 'bar',
+            data: { labels: datos.meses, datasets: [
+                { label: 'Vendido', data: datos.ventas, backgroundColor: color('--brand'), borderRadius: 6, maxBarThickness: 28 },
+                { label: 'Beneficio', data: datos.beneficio, backgroundColor: color('--gold'), borderRadius: 6, maxBarThickness: 28 }
+            ] },
+            options: Object.assign({}, comunes, {
+                plugins: Object.assign({}, comunes.plugins, { tooltip: { callbacks: { label: function (c) { return c.dataset.label + ': ' + euros.format(c.parsed.y); } } } }),
+                scales: { x: comunes.scales.x, y: Object.assign({}, comunes.scales.y, { ticks: { maxTicksLimit: 5, callback: function (v) { return v + ' €'; } } }) }
+            })
+        });
+    }
+
+    new Chart(document.getElementById('graficaAltas'), {
+        type: 'line',
+        data: { labels: datos.meses, datasets: [{
+            label: 'Prendas añadidas', data: datos.altas, borderColor: color('--brand'),
+            backgroundColor: color('--brand-soft'), fill: true, tension: .35, pointRadius: 3
+        }] },
+        options: Object.assign({}, comunes, { plugins: { legend: { display: false } } })
+    });
+})();
+</script>
+</body>
+</html>

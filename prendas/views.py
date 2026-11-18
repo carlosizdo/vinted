@@ -11,7 +11,8 @@ from .templatetags.formato import dato, euros
 import openpyxl
 from decimal import Decimal, InvalidOperation
 from django.db import transaction
-from django.db.models import F, Q, Sum
+from django.db.models import Count, F, Q, Sum
+from django.db.models.functions import TruncMonth
 from django.utils import timezone
 
 
@@ -134,6 +135,8 @@ def lista_prendas(request):
         'tallas': tallas,
         'marcas': marcas,
         'pedido_inicial': pedido_inicial,
+        'abrir_nuevo': request.GET.get('nuevo') == '1',
+        'hay_filtros': bool(busqueda or filtro_talla or filtro_marca or orden),
     })
 
 
@@ -293,6 +296,85 @@ def importar_prendas(request):
                 form.add_error('archivo', str(error))
 
     return render(request, 'prendas/importar_prendas.html', {'form': form})
+
+
+MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sept', 'oct', 'nov', 'dic']
+
+
+def _ultimos_meses(n=6):
+    """Primer día de los últimos `n` meses, del más antiguo al actual."""
+    hoy = timezone.localdate().replace(day=1)
+    meses = []
+    for i in range(n - 1, -1, -1):
+        anio, mes = divmod(hoy.month - 1 - i, 12)
+        meses.append(hoy.replace(year=hoy.year + anio, month=mes + 1))
+    return meses
+
+
+@login_required
+def resumen(request):
+    vendidas = Prenda.objects.filter(estado='vendido', precio_vendido__isnull=False)
+    n_vendidas = vendidas.count()
+    totales = vendidas.aggregate(
+        ventas=Sum('precio_vendido'),
+        beneficio=Sum(F('precio_vendido') - F('precio_comprado')),
+    )
+    ventas = totales['ventas'] or Decimal('0.00')
+    beneficio = totales['beneficio'] or Decimal('0.00')
+    en_stock = Prenda.objects.exclude(estado='vendido')
+    gastos_extra = Gasto.objects.aggregate(total=Sum('importe'))['total'] or Decimal('0.00')
+
+    # Gráficas: últimos 6 meses.
+    meses = _ultimos_meses(6)
+    desde = meses[0]
+    por_mes_ventas = {
+        fila['mes'].date() if hasattr(fila['mes'], 'date') else fila['mes']: fila
+        for fila in vendidas.filter(fecha_venta__date__gte=desde)
+        .annotate(mes=TruncMonth('fecha_venta')).values('mes')
+        .annotate(ventas=Sum('precio_vendido'), beneficio=Sum(F('precio_vendido') - F('precio_comprado')), n=Count('id'))
+    }
+    por_mes_altas = {
+        fila['mes'].date() if hasattr(fila['mes'], 'date') else fila['mes']: fila['n']
+        for fila in Prenda.objects.filter(fecha_creacion__date__gte=desde)
+        .annotate(mes=TruncMonth('fecha_creacion')).values('mes').annotate(n=Count('id'))
+    }
+    grafica = {
+        'meses': [f'{MESES[m.month - 1]} {str(m.year)[2:]}' for m in meses],
+        'ventas': [float(por_mes_ventas.get(m, {}).get('ventas') or 0) for m in meses],
+        'beneficio': [float(por_mes_ventas.get(m, {}).get('beneficio') or 0) for m in meses],
+        'vendidas': [por_mes_ventas.get(m, {}).get('n', 0) for m in meses],
+        'altas': [por_mes_altas.get(m, 0) for m in meses],
+    }
+    hay_ventas_con_fecha = any(grafica['vendidas'])
+
+    # Marcas que más beneficio dejan.
+    marcas = {}
+    for marca, precio_vendido, precio_comprado in vendidas.values_list('marca', 'precio_vendido', 'precio_comprado'):
+        nombre = dato(marca)
+        if not nombre:
+            continue
+        clave = nombre.casefold()
+        fila = marcas.setdefault(clave, {'nombre': nombre, 'beneficio': Decimal('0.00'), 'n': 0})
+        if nombre[:1].isupper() and not fila['nombre'][:1].isupper():
+            fila['nombre'] = nombre  # Mejor «Nike» que «nike».
+        fila['beneficio'] += precio_vendido - precio_comprado
+        fila['n'] += 1
+    top_marcas = sorted(marcas.values(), key=lambda f: f['beneficio'], reverse=True)[:5]
+
+    return render(request, 'prendas/resumen.html', {
+        'n_vendidas': n_vendidas,
+        'ventas': ventas,
+        'beneficio': beneficio,
+        'margen_medio': (beneficio / n_vendidas).quantize(Decimal('0.01')) if n_vendidas else None,
+        'precio_medio': (ventas / n_vendidas).quantize(Decimal('0.01')) if n_vendidas else None,
+        'n_stock': en_stock.count(),
+        'valor_stock': en_stock.aggregate(total=Sum('precio_comprado'))['total'] or Decimal('0.00'),
+        'gastos_extra': gastos_extra,
+        'beneficio_tras_gastos': beneficio - gastos_extra,
+        'grafica': grafica,
+        'hay_ventas_con_fecha': hay_ventas_con_fecha,
+        'top_marcas': top_marcas,
+    })
 
 
 @login_required

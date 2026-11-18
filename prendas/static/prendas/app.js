@@ -19,3 +19,22 @@ setTimeout(function () {
         modal.querySelector('#precioVendida').focus();
     });
 })();
+
+// Botón «+» de la barra inferior: en el inventario abre el formulario sin recargar.
+(function () {
+    var formulario = document.getElementById('formNueva');
+    function enfocar() {
+        formulario.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        var campo = formulario.querySelector('input[name="tipo_de_prenda"]');
+        if (campo) setTimeout(function () { campo.focus({ preventScroll: true }); }, 250);
+    }
+    document.querySelectorAll('[data-nueva-prenda]').forEach(function (boton) {
+        boton.addEventListener('click', function (event) {
+            if (!formulario) return; // En otras páginas, el enlace lleva al inventario.
+            event.preventDefault();
+            bootstrap.Collapse.getOrCreateInstance(formulario, { toggle: false }).show();
+            enfocar();
+        });
+    });
+    if (formulario && formulario.classList.contains('show') && window.location.hash === '#formNueva') enfocar();
+})();

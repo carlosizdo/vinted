@@ -11,8 +11,8 @@
 </head>
 <body>
 <nav class="navbar app-navbar px-4 py-3">
-    <a href="{% url 'lista_prendas' %}" class="navbar-brand fw-semibold fs-5"><span class="brand-mark">M</span> Mi Tienda</a>
-    <div class="navbar-actions"><a href="{% url 'detalle_pedido' pedido.pk %}" class="btn nav-action">← Volver al pedido</a></div>
+    <a href="{% url 'lista_prendas' %}" class="navbar-brand"><span class="brand-mark">M</span>Mi tienda</a>
+    <div class="navbar-actions"><a href="{% url 'detalle_pedido' pedido.pk %}" class="btn nav-action"><i class="ti ti-arrow-left" aria-hidden="true"></i>Volver</a></div>
 </nav>
 <main class="page-shell page-content container-fluid px-4 py-4 asignar-page">
     <div class="eyebrow">{{ pedido.nombre }}</div>
@@ -38,7 +38,7 @@
                 <input type="checkbox" name="prendas" value="{{ prenda.pk }}" class="form-check-input">
                 <span class="pick-body">
                     <strong>{{ prenda.tipo_de_prenda }}</strong>
-                    <small>{% if localizador %}📍 {{ localizador }} · {% endif %}{% if talla %}Talla {{ talla }} · {% endif %}{% if marca %}{{ marca }} · {% endif %}{{ prenda.get_estado_display }}</small>
+                    <small>{% if localizador %}<i class="ti ti-map-pin" aria-hidden="true"></i>{{ localizador }} · {% endif %}{% if talla %}Talla {{ talla }} · {% endif %}{% if marca %}{{ marca }} · {% endif %}{{ prenda.get_estado_display }}</small>
                 </span>
                 <span class="pick-price">{{ prenda.precio_comprado|euros }}</span>
             </label>
@@ -50,7 +50,7 @@
         </div>
     </form>
     {% else %}
-    <div class="empty-state text-center"><div class="empty-icon">✓</div><h5 class="mb-1">{% if busqueda %}No hay prendas sin pedido con «{{ busqueda }}»{% else %}Todas tus prendas ya tienen pedido{% endif %}</h5><p class="mb-3">Puedes crear una prenda nueva directamente en este pedido.</p><a href="{% url 'lista_prendas' %}?pedido={{ pedido.pk }}" class="btn btn-dark">Nueva prenda</a></div>
+    <div class="empty-state text-center"><div class="empty-icon"><i class="ti ti-check" aria-hidden="true"></i></div><h5 class="mb-1">{% if busqueda %}No hay prendas sin pedido con «{{ busqueda }}»{% else %}Todas tus prendas ya tienen pedido{% endif %}</h5><p class="mb-3">Puedes crear una prenda nueva directamente en este pedido.</p><a href="{% url 'lista_prendas' %}?pedido={{ pedido.pk }}" class="btn btn-dark">Nueva prenda</a></div>
     {% endif %}
 </main>
 <script>

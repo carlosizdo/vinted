@@ -371,3 +371,92 @@ class PedidosMejorasTests(TestCase):
         })
         self.assertRedirects(response, reverse('detalle_pedido', args=[self.pedido.pk]))
         self.assertTrue(self.pedido.prendas.filter(tipo_de_prenda='Bolso').exists())
+
+
+class DisenoYResumenTests(TestCase):
+    def setUp(self):
+        self.client.force_login(User.objects.create_user(username='usuario', password='secreto'))
+
+    def crear(self, nombre, **extra):
+        datos = dict(tipo_de_prenda=nombre, talla='M', color='Negro', marca='Zara',
+                     donde_esta_subido='Vinted', precio_comprado=Decimal('5.00'), estado='disponible')
+        datos.update(extra)
+        return Prenda.objects.create(**datos)
+
+    def test_fecha_de_venta_se_pone_al_vender_y_se_quita_al_deshacer(self):
+        prenda = self.crear('A')
+        self.assertIsNone(prenda.fecha_venta)
+        self.client.post(reverse('marcar_vendida', args=[prenda.pk]), {'precio_vendido': '9'})
+        prenda.refresh_from_db()
+        self.assertIsNotNone(prenda.fecha_venta)
+        prenda.estado = 'disponible'
+        prenda.save()
+        prenda.refresh_from_db()
+        self.assertIsNone(prenda.fecha_venta)
+
+    def test_editar_venta_antigua_no_le_pone_fecha(self):
+        prenda = self.crear('Antigua', precio_vendido=Decimal('9'), estado='vendido')
+        Prenda.objects.filter(pk=prenda.pk).update(fecha_venta=None)  # Como las ventas de antes.
+        prenda.refresh_from_db()
+        prenda.color = 'Rojo'
+        prenda.save()
+        prenda.refresh_from_db()
+        self.assertIsNone(prenda.fecha_venta)
+
+    def test_resumen_calcula_cifras_y_marcas(self):
+        self.crear('A', marca='Nike', precio_vendido=Decimal('20'), estado='vendido')
+        self.crear('B', marca='nike', precio_vendido=Decimal('10'), estado='vendido')
+        self.crear('C', marca='-', precio_vendido=Decimal('8'), estado='vendido')
+        self.crear('D')
+        Gasto.objects.create(concepto='Bolsas', importe=Decimal('3'))
+        response = self.client.get(reverse('resumen'))
+        self.assertEqual(response.status_code, 200)
+        ctx = response.context
+        self.assertEqual(ctx['beneficio'], Decimal('23.00'))
+        self.assertEqual(ctx['beneficio_tras_gastos'], Decimal('20.00'))
+        self.assertEqual(ctx['n_stock'], 1)
+        self.assertEqual([(m['nombre'], m['n']) for m in ctx['top_marcas']], [('Nike', 2)])
+        self.assertEqual(sum(ctx['grafica']['vendidas']), 3)
+        self.assertEqual(len(ctx['grafica']['meses']), 6)
+
+    def test_paginas_cargan_con_iconos_y_sin_emojis(self):
+        prenda = self.crear('A')
+        pedido = Pedido.objects.create(nombre='Lote', importe_compra=Decimal('10'))
+        for url in (reverse('lista_prendas'), reverse('lista_pedidos'), reverse('detalle_pedido', args=[pedido.pk]),
+                    reverse('lista_gastos'), reverse('resumen'), reverse('lista_prendas') + '?vista=tabla'):
+            response = self.client.get(url)
+            self.assertEqual(response.status_code, 200, url)
+            self.assertContains(response, 'tabler-icons')
+            for emoji in ('🗑', '✏', '📦', '💸'):
+                self.assertNotContains(response, emoji)
+
+    def test_boton_mas_abre_el_formulario(self):
+        response = self.client.get(reverse('lista_prendas'), {'nuevo': '1'})
+        self.assertTrue(response.context['abrir_nuevo'])
+        self.assertContains(response, 'class="collapse show" id="formNueva"')
+
+
+class TodasLasPaginasCarganTests(TestCase):
+    """Abre cada página con sesión iniciada para detectar errores de plantilla."""
+
+    def test_todas_las_paginas_responden(self):
+        self.client.force_login(User.objects.create_user(username='usuario', password='secreto'))
+        pedido = Pedido.objects.create(nombre='Lote', importe_compra=Decimal('10'))
+        prenda = Prenda.objects.create(tipo_de_prenda='A', donde_esta_subido='Vinted', precio_comprado=Decimal('5'),
+                                       estado='disponible', pedido=pedido)
+        gasto = Gasto.objects.create(concepto='Bolsas', importe=Decimal('3'))
+        urls = [
+            reverse('lista_prendas'), reverse('lista_prendas') + '?vista=tabla', reverse('editar_prenda', args=[prenda.pk]),
+            reverse('eliminar_prenda', args=[prenda.pk]), reverse('importar_prendas'), reverse('lista_gastos'),
+            reverse('eliminar_gasto', args=[gasto.pk]), reverse('lista_pedidos'), reverse('detalle_pedido', args=[pedido.pk]),
+            reverse('editar_pedido', args=[pedido.pk]), reverse('asignar_prendas', args=[pedido.pk]),
+            reverse('eliminar_pedido', args=[pedido.pk]), reverse('repartir_coste', args=[pedido.pk]), reverse('resumen'),
+        ]
+        for url in urls:
+            self.assertEqual(self.client.get(url).status_code, 200, url)
+        # Con un aviso pendiente (las plantillas de avisos fallaron una vez).
+        self.client.post(reverse('lista_gastos'), {'concepto': 'Cinta', 'importe': '2'})
+        self.assertEqual(self.client.get(reverse('lista_gastos')).status_code, 200)
+
+    def test_inicio_de_sesion_carga(self):
+        self.assertEqual(self.client.get(reverse('login')).status_code, 200)

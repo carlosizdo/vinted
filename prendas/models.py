@@ -39,6 +39,22 @@ class Prenda(models.Model):
     localizador = models.CharField(max_length=10, blank=True)
     pedido = models.ForeignKey(Pedido, on_delete=models.SET_NULL, null=True, blank=True, related_name='prendas')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    # Se rellena sola al marcarla como vendida; las ventas anteriores a este
+    # campo no tienen fecha.
+    fecha_venta = models.DateTimeField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if self.estado == 'vendido' and self.fecha_venta is None:
+            # Solo cuando pasa a vendida ahora, no al editar una venta antigua.
+            anterior = Prenda.objects.filter(pk=self.pk).values_list('estado', flat=True).first() if self.pk else None
+            if anterior != 'vendido':
+                self.fecha_venta = timezone.now()
+        elif self.estado != 'vendido':
+            self.fecha_venta = None
+        update_fields = kwargs.get('update_fields')
+        if update_fields is not None and 'estado' in update_fields:
+            kwargs['update_fields'] = set(update_fields) | {'fecha_venta'}
+        super().save(*args, **kwargs)
 
     def beneficio(self):
         if self.precio_vendido is not None:

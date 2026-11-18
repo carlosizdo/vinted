@@ -1,5 +1,7 @@
 <nav class="bottom-nav d-md-none" aria-label="Secciones">
-    <a href="{% url 'lista_prendas' %}" class="{% if activo == 'inventario' %}is-active{% endif %}"{% if activo == 'inventario' %} aria-current="page"{% endif %}><span aria-hidden="true">👕</span>Inventario</a>
-    <a href="{% url 'lista_pedidos' %}" class="{% if activo == 'pedidos' %}is-active{% endif %}"{% if activo == 'pedidos' %} aria-current="page"{% endif %}><span aria-hidden="true">📦</span>Pedidos</a>
-    <a href="{% url 'lista_gastos' %}" class="{% if activo == 'gastos' %}is-active{% endif %}"{% if activo == 'gastos' %} aria-current="page"{% endif %}><span aria-hidden="true">💸</span>Gastos</a>
+    <a href="{% url 'lista_prendas' %}" class="{% if activo == 'inventario' %}is-active{% endif %}"{% if activo == 'inventario' %} aria-current="page"{% endif %}><i class="ti ti-shirt" aria-hidden="true"></i>Inventario</a>
+    <a href="{% url 'lista_pedidos' %}" class="{% if activo == 'pedidos' %}is-active{% endif %}"{% if activo == 'pedidos' %} aria-current="page"{% endif %}><i class="ti ti-package" aria-hidden="true"></i>Pedidos</a>
+    <a href="{% url 'lista_prendas' %}?nuevo=1#formNueva" class="nav-add" data-nueva-prenda aria-label="Añadir prenda"><span><i class="ti ti-plus" aria-hidden="true"></i></span></a>
+    <a href="{% url 'lista_gastos' %}" class="{% if activo == 'gastos' %}is-active{% endif %}"{% if activo == 'gastos' %} aria-current="page"{% endif %}><i class="ti ti-receipt" aria-hidden="true"></i>Gastos</a>
+    <a href="{% url 'resumen' %}" class="{% if activo == 'resumen' %}is-active{% endif %}"{% if activo == 'resumen' %} aria-current="page"{% endif %}><i class="ti ti-chart-line" aria-hidden="true"></i>Resumen</a>
 </nav>

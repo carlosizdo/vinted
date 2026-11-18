@@ -11,19 +11,19 @@
 </head>
 <body class="has-bottom-nav">
 <nav class="navbar app-navbar px-4 py-3">
-    <a href="{% url 'lista_prendas' %}" class="navbar-brand fw-semibold fs-5"><span class="brand-mark">M</span> Mi Tienda</a>
+    <a href="{% url 'lista_prendas' %}" class="navbar-brand"><span class="brand-mark">M</span>Mi tienda</a>
+    {% include 'prendas/_header_links.html' with activo='pedidos' %}
     <div class="navbar-actions">
-        <a href="{% url 'lista_pedidos' %}" class="btn nav-action d-none d-md-inline-block">← Pedidos</a>
-        <a href="{% url 'asignar_prendas' pedido.pk %}" class="btn nav-primary">+ Añadir prendas</a>
+                <a href="{% url 'asignar_prendas' pedido.pk %}" class="btn nav-primary"><i class="ti ti-plus" aria-hidden="true"></i>Añadir prendas</a>
     </div>
     <div class="dropdown nav-more">
-        <button class="btn nav-action nav-more-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Más opciones del pedido">⋯</button>
+        <button class="btn nav-more-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Más opciones del pedido"><i class="ti ti-dots" aria-hidden="true"></i></button>
         <ul class="dropdown-menu dropdown-menu-end">
-            <li><a class="dropdown-item" href="{% url 'lista_prendas' %}?pedido={{ pedido.pk }}">👕 Nueva prenda en este pedido</a></li>
-            <li><a class="dropdown-item" href="{% url 'editar_pedido' pedido.pk %}">✏️ Editar pedido</a></li>
-            <li><a class="dropdown-item" href="{% url 'repartir_coste' pedido.pk %}">➗ Repartir coste entre prendas</a></li>
+            <li><a class="dropdown-item" href="{% url 'lista_prendas' %}?pedido={{ pedido.pk }}"><i class="ti ti-shirt" aria-hidden="true"></i>Nueva prenda en este pedido</a></li>
+            <li><a class="dropdown-item" href="{% url 'editar_pedido' pedido.pk %}"><i class="ti ti-pencil" aria-hidden="true"></i>Editar pedido</a></li>
+            <li><a class="dropdown-item" href="{% url 'repartir_coste' pedido.pk %}"><i class="ti ti-divide" aria-hidden="true"></i>Repartir coste entre prendas</a></li>
             <li><hr class="dropdown-divider"></li>
-            <li><a class="dropdown-item text-danger" href="{% url 'eliminar_pedido' pedido.pk %}">🗑️ Eliminar pedido</a></li>
+            <li><a class="dropdown-item text-danger" href="{% url 'eliminar_pedido' pedido.pk %}"><i class="ti ti-trash" aria-hidden="true"></i>Eliminar pedido</a></li>
         </ul>
     </div>
 </nav>
@@ -53,13 +53,13 @@
 
     <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
         <div><div class="eyebrow">Contenido del pedido</div><h2 class="page-heading h4 mb-0">Prendas vinculadas</h2></div>
-        <a href="{% url 'lista_prendas' %}?pedido={{ pedido.pk }}" class="btn btn-outline-secondary btn-sm">+ Nueva prenda</a>
+        <a href="{% url 'lista_prendas' %}?pedido={{ pedido.pk }}" class="btn btn-outline-secondary btn-sm"><i class="ti ti-plus" aria-hidden="true"></i>Nueva prenda</a>
     </div>
     <div class="row g-3">
         {% for prenda in prendas %}
         {% include 'prendas/_tarjeta_prenda.html' with en_pedido=pedido %}
         {% empty %}
-        <div class="col-12"><div class="empty-state text-center"><div class="empty-icon">📦</div><h5 class="mb-1">Este pedido está vacío</h5><p class="mb-3">Elige las prendas que vinieron en este lote o crea una nueva.</p><div class="d-flex flex-wrap gap-2 justify-content-center"><a href="{% url 'asignar_prendas' pedido.pk %}" class="btn btn-dark">+ Añadir prendas</a><a href="{% url 'lista_prendas' %}?pedido={{ pedido.pk }}" class="btn btn-outline-secondary">Nueva prenda</a></div></div></div>
+        <div class="col-12"><div class="empty-state text-center"><div class="empty-icon"><i class="ti ti-package" aria-hidden="true"></i></div><h5 class="mb-1">Este pedido está vacío</h5><p class="mb-3">Elige las prendas que vinieron en este lote o crea una nueva.</p><div class="d-flex flex-wrap gap-2 justify-content-center"><a href="{% url 'asignar_prendas' pedido.pk %}" class="btn btn-dark"><i class="ti ti-plus" aria-hidden="true"></i>Añadir prendas</a><a href="{% url 'lista_prendas' %}?pedido={{ pedido.pk }}" class="btn btn-outline-secondary">Nueva prenda</a></div></div></div>
         {% endfor %}
     </div>
 </main>
